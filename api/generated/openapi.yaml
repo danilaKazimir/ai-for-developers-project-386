@@ -1,0 +1,58 @@
+openapi: 3.1.0
+info:
+  title: Call Calendar API
+  version: 0.1.0
+tags: []
+paths:
+  /api/health:
+    get:
+      operationId: getHealth
+      description: Check that the API can execute a query against PostgreSQL.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  schemas:
+    ApiError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - DATABASE_UNAVAILABLE
+        message:
+          type: string
+      unevaluatedProperties:
+        not: {}
+      description: A public error without database connection details.
+    HealthStatus:
+      type: object
+      required:
+        - status
+        - database
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+        database:
+          type: string
+          enum:
+            - ok
+      unevaluatedProperties:
+        not: {}
+      description: The API and its PostgreSQL connection are ready.

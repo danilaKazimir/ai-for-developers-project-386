@@ -1,0 +1,25 @@
+:root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #202b3c; background: #f4f5f7; font-synthesis: none; text-rendering: optimizeLegibility; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button { font: inherit; }
+.page { width: min(100% - 40px, 680px); margin: 64px auto; }
+.brand { display: flex; align-items: center; gap: 12px; font-weight: 650; font-size: 18px; }
+.brand-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; background: #305de0; color: white; }
+.card { margin-top: 48px; padding: 40px; background: white; border: 1px solid #e2e6ed; border-radius: 20px; box-shadow: 0 8px 24px #202b3c05; }
+.eyebrow { color: #657185; letter-spacing: .12em; font-size: 11px; font-weight: 700; margin: 0 0 16px; }
+h1 { font-size: clamp(28px, 5vw, 36px); letter-spacing: -.04em; margin: 0 0 16px; }
+.intro { color: #657185; line-height: 1.7; margin: 0; }
+.connection { display: flex; gap: 12px; align-items: flex-start; padding: 18px; margin: 28px 0 24px; border-radius: 12px; background: #f4f5f7; font-size: 14px; line-height: 1.6; }
+.connection p { margin: 0; }
+.indicator { flex: 0 0 8px; height: 8px; margin-top: 7px; border-radius: 50%; background: #7d8798; }
+.success { background: #edf8f2; color: #17643d; }
+.success .indicator { background: #218653; }
+.error { background: #fff3eb; color: #8c4314; }
+.error .indicator { background: #bd6223; }
+button { padding: 12px 18px; border: 0; border-radius: 9px; background: #305de0; color: white; cursor: pointer; font-weight: 600; }
+button:hover { background: #244bc1; }
+button:disabled { opacity: .65; cursor: wait; }
+button:focus-visible { outline: 3px solid #8ba7ff; outline-offset: 4px; }
+footer { margin-top: 24px; color: #657185; font-size: 12px; text-align: center; }
+@media (max-width: 480px) { .page { margin-top: 32px; } .card { margin-top: 32px; padding: 24px; } button { width: 100%; } }
+

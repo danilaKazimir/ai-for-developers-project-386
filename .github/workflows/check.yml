@@ -1,0 +1,34 @@
+name: Application checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: postgresql+psycopg://calendar:calendar@127.0.0.1:5432/calendar
+      TEST_DATABASE_URL: postgresql+psycopg://calendar:calendar@127.0.0.1:5432/calendar_test
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v3
+        with:
+          version: 2026.10.25
+      - run: mise run setup
+      - run: mise run db:up
+      - name: Create the dedicated test database
+        run: docker compose exec -T db createdb -U calendar calendar_test
+      - run: mise run migrate
+      - run: mise run check
+      - name: PostgreSQL logs
+        if: failure()
+        run: docker compose logs db
+      - name: Stop PostgreSQL
+        if: always()
+        run: mise run db:down
+
