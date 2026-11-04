@@ -146,3 +146,21 @@ class EventTypeSlots(BaseModel):
     windowStartDate: date_aliased
     windowEndDateExclusive: date_aliased
     days: list[SlotDay]
+
+
+class OrganizerBooking(BookingConfirmation):
+    """
+    Guest contacts are available only to the organizer.
+    """
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    guest: BookingGuest
+
+
+class OrganizerBookings(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    items: list[OrganizerBooking]

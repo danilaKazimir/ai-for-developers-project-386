@@ -15,5 +15,4 @@ export interface BookingConfirmation {
   startsAt: string;
   endsAt: string;
   timezone: string;
-  [key: string]: unknown;
 }

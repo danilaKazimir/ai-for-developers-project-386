@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getListEventTypesQueryKey, useCreateEventType, useListEventTypes } from './api/generated/calendar';
 import { ApiHttpError } from './api/http';
+import { useOrganizerAccess } from './organizer-access';
 
 export function EventTypeCatalog() {
   const catalog = useListEventTypes();
@@ -39,7 +40,7 @@ function creationError(error: unknown): string {
 }
 
 export function CreateEventType() {
-  const [token, setToken] = useState('');
+  const { token, changeToken } = useOrganizerAccess();
   const [id, setId] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -65,7 +66,7 @@ export function CreateEventType() {
       <p className="page-intro">Задайте формат встречи и получите публичную ссылку. Все типы используют один календарь: будни, 09:00–18:00, Europe/Moscow.</p>
       <form className="event-form" onSubmit={submit}>
         <label>Ключ управления
-          <input readOnly={creation.isPending} type="password" autoComplete="off" required value={token} onChange={(event) => setToken(event.target.value)} aria-describedby="key-hint" />
+          <input readOnly={creation.isPending} type="password" autoComplete="off" required value={token} onChange={(event) => { creation.reset(); changeToken(event.target.value); }} aria-describedby="key-hint" />
         </label>
         <p id="key-hint" className="field-hint">Ключ задаётся организатором на сервере. После обновления страницы введите его заново.</p>
         <label>Id типа события
@@ -82,7 +83,7 @@ export function CreateEventType() {
         </label>
         {creation.isError && <p role="alert" className="form-error">{creationError(creation.error)}</p>}
         <button className="button button-primary" disabled={creation.isPending} type="submit">{creation.isPending ? 'Создаём…' : 'Создать тип события'}</button>
-        <button type="button" disabled={creation.isPending} className="text-link" onClick={() => { setToken(''); creation.reset(); queryClient.getMutationCache().clear(); }}>Забыть ключ</button>
+        <button type="button" disabled={creation.isPending} className="text-link" onClick={() => { creation.reset(); changeToken(''); }}>Забыть ключ</button>
       </form>
       {creation.isSuccess && <section className="creation-success" role="status" aria-live="polite">
         <h2>Тип события создан</h2>

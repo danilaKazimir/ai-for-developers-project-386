@@ -1,3 +1,5 @@
+import { useEffect, useState, type MouseEvent } from 'react';
+import { OrganizerBookings } from './OrganizerBookings';
 import { CreateEventType, EventTypeCatalog } from './EventTypes';
 import { SlotCalendar } from './SlotCalendar';
 
@@ -178,23 +180,40 @@ function MessagePage({ content }: { content: MessagePageContent }) {
 }
 
 export function App() {
-  const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
+  const [location, setLocation] = useState(window.location.pathname);
+  useEffect(() => {
+    const navigate = () => setLocation(window.location.pathname);
+    window.addEventListener('popstate', navigate);
+    return () => window.removeEventListener('popstate', navigate);
+  }, []);
+  function navigate(event: MouseEvent<HTMLDivElement>) {
+    const anchor = (event.target as Element).closest('a');
+    if (!anchor || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || anchor.target || anchor.hasAttribute('download')) return;
+    const url = new URL(anchor.href);
+    if (url.origin !== window.location.origin || url.hash || url.protocol !== window.location.protocol) return;
+    event.preventDefault();
+    window.history.pushState(null, '', url);
+    setLocation(url.pathname);
+    window.scrollTo(0, 0);
+  }
+  const pathname = location.replace(/\/+$/, '') || '/';
   const isHomePage = pathname === '/';
   const isCreatePage = pathname === createCalendarPath || pathname === '/organizer/event-types/new';
+  const isBookingsPage = pathname === '/organizer/bookings';
   const isCatalogPage = pathname === '/event-types';
   const eventTypeId = /^\/event-types\/([^/]+)$/.exec(pathname)?.[1];
   const messagePage = messagePages.notFound;
-  const title = isHomePage ? 'Календарь звонков — встречи без лишней переписки' : isCreatePage ? 'Создать тип события — Календарь звонков' : isCatalogPage ? 'Типы событий — Календарь звонков' : eventTypeId ? 'Выбрать время — Календарь звонков' : messagePage.title;
+  const title = isHomePage ? 'Календарь звонков — встречи без лишней переписки' : isCreatePage ? 'Создать тип события — Календарь звонков' : isBookingsPage ? 'Предстоящие встречи — Календарь звонков' : isCatalogPage ? 'Типы событий — Календарь звонков' : eventTypeId ? 'Выбрать время — Календарь звонков' : messagePage.title;
 
   return (
-    <div className="app">
+    <div className="app" onClick={navigate}>
       <title>{title}</title>
       <a className="skip-link" href="#main-content">Перейти к содержимому</a>
       <header className="site-header container">
         <Brand />
-        <nav aria-label="Основная навигация"><a className="catalog-link" href="/event-types">Каталог</a>{isHomePage && <a className="how-link" href="#how-it-works">Как это работает</a>}{!isCreatePage && <CreateCalendarLink className="header-button" />}</nav>
+        <nav aria-label="Основная навигация"><a className="catalog-link" href="/organizer/bookings">Предстоящие встречи</a><a className="catalog-link" href="/event-types">Каталог</a>{isHomePage && <a className="how-link" href="#how-it-works">Как это работает</a>}{!isCreatePage && <CreateCalendarLink className="header-button" />}</nav>
       </header>
-      {isHomePage ? <LandingPage /> : isCreatePage ? <CreateEventType /> : isCatalogPage ? <EventTypeCatalog /> : eventTypeId ? <SlotCalendar eventTypeId={eventTypeId} /> : <MessagePage content={messagePage} />}
+      {isHomePage ? <LandingPage /> : isCreatePage ? <CreateEventType /> : isBookingsPage ? <OrganizerBookings /> : isCatalogPage ? <EventTypeCatalog /> : eventTypeId ? <SlotCalendar key={eventTypeId} eventTypeId={eventTypeId} /> : <MessagePage content={messagePage} />}
       <footer className="site-footer container"><span>Календарь звонков</span><p>Больше времени на разговор.</p></footer>
     </div>
   );

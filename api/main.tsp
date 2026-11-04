@@ -159,3 +159,21 @@ op createBooking(@body booking: CreateBookingRequest): {
   @statusCode statusCode: 201;
   @body body: BookingConfirmation;
 } | EventTypeNotFoundError | TimeConflictError | BookingValidationError | ServiceUnavailableError | InternalError;
+
+/** Guest contacts are available only to the organizer. */
+model OrganizerBooking extends BookingConfirmation {
+  guest: BookingGuest;
+}
+model OrganizerBookings {
+  items: OrganizerBooking[];
+}
+
+/** All bookings starting at or after now, ordered by start then UUID, without a window limit. */
+@route("/api/organizer/bookings")
+@get
+@useAuth(BearerAuth)
+@operationId("listOrganizerBookings")
+op listOrganizerBookings(): {
+  @header("Cache-Control") cacheControl: "private, no-store";
+  @body body: OrganizerBookings;
+} | AccessDeniedError | ServiceUnavailableError | InternalError;

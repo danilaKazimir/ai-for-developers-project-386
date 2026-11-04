@@ -232,6 +232,69 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
+  /api/organizer/bookings:
+    get:
+      operationId: listOrganizerBookings
+      description: All bookings starting at or after now, ordered by start then UUID, without a window limit.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+                enum:
+                  - private, no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizerBookings'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - ORGANIZER_ACCESS_DENIED
+                  message:
+                    type: string
+                required:
+                  - code
+                  - message
+                unevaluatedProperties:
+                  not: {}
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - INTERNAL_ERROR
+                  message:
+                    type: string
+                required:
+                  - code
+                  - message
+                unevaluatedProperties:
+                  not: {}
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+        - BearerAuth: []
   /api/organizer/event-types:
     post:
       operationId: createEventType
@@ -368,8 +431,6 @@ components:
           format: date-time
         timezone:
           type: string
-      unevaluatedProperties:
-        not: {}
       description: Confirmation contains only the newly created booking, never guest contacts.
     BookingGuest:
       type: object
@@ -517,6 +578,29 @@ components:
       unevaluatedProperties:
         not: {}
       description: The API and its PostgreSQL connection are ready.
+    OrganizerBooking:
+      type: object
+      required:
+        - guest
+      properties:
+        guest:
+          $ref: '#/components/schemas/BookingGuest'
+      unevaluatedProperties:
+        not: {}
+      allOf:
+        - $ref: '#/components/schemas/BookingConfirmation'
+      description: Guest contacts are available only to the organizer.
+    OrganizerBookings:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrganizerBooking'
+      unevaluatedProperties:
+        not: {}
     Slot:
       type: object
       required:

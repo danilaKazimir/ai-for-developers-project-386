@@ -1,11 +1,11 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy import text
 from sqlalchemy.exc import InterfaceError, OperationalError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -36,6 +36,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await engine.dispose()
 
     app = FastAPI(title="Call Calendar API", version="0.1.0", lifespan=lifespan)
+
+    @app.middleware("http")
+    async def private_organizer_responses(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        response = await call_next(request)
+        if request.url.path.startswith("/api/organizer/"):
+            response.headers["Cache-Control"] = "private, no-store"
+        return response
 
     app.include_router(router)
     app.include_router(bookings_router)
@@ -76,6 +85,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def internal_error(request: Request, error: Exception) -> JSONResponse:
         return JSONResponse(
             status_code=500,
+            headers={"Cache-Control": "private, no-store"}
+            if request.url.path.startswith("/api/organizer/")
+            else None,
             content={
                 "code": "INTERNAL_ERROR",
                 "message": "Не удалось выполнить запрос.",

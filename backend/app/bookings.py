@@ -1,4 +1,4 @@
-from datetime import UTC
+from datetime import UTC, datetime
 from re import fullmatch
 from typing import Annotated, Any
 from zoneinfo import ZoneInfo
@@ -10,8 +10,14 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db import get_session
-from backend.app.event_types import event_type_response
-from backend.app.generated.models import BookingConfirmation, BookingGuest, CreateBookingRequest
+from backend.app.event_types import event_type_response, require_organizer
+from backend.app.generated.models import (
+    BookingConfirmation,
+    BookingGuest,
+    CreateBookingRequest,
+    OrganizerBooking,
+    OrganizerBookings,
+)
 from backend.app.models import BOOKING_OVERLAP_CONSTRAINT, BookingRecord, Calendar, EventTypeRecord
 from backend.app.scheduling import get_now, schedule_days
 
@@ -144,3 +150,41 @@ async def create_booking(
         ):
             raise time_conflict() from error
         raise
+
+
+@router.get(
+    "/api/organizer/bookings",
+    response_model=OrganizerBookings,
+    dependencies=[Depends(require_organizer)],
+    operation_id="listOrganizerBookings",
+)
+async def list_organizer_bookings(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    now: Annotated[datetime, Depends(get_now)],
+) -> OrganizerBookings:
+    calendar = await session.get(Calendar, 1)
+    if calendar is None:
+        raise RuntimeError("The common calendar has not been initialized")
+    rows = await session.execute(
+        select(BookingRecord, EventTypeRecord)
+        .join(EventTypeRecord, BookingRecord.event_type_id == EventTypeRecord.id)
+        .where(BookingRecord.starts_at >= now)
+        .order_by(BookingRecord.starts_at, BookingRecord.id)
+    )
+    return OrganizerBookings(
+        items=[
+            OrganizerBooking(
+                id=booking.id,
+                eventType=event_type_response(event_type),
+                startsAt=booking.starts_at.astimezone(UTC),
+                endsAt=booking.ends_at.astimezone(UTC),
+                timezone=calendar.timezone,
+                guest=BookingGuest(
+                    name=booking.guest_name,
+                    email=booking.guest_email,
+                    comment=booking.guest_comment,
+                ),
+            )
+            for booking, event_type in rows
+        ]
+    )

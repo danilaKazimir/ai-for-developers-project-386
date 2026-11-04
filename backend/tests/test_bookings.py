@@ -306,6 +306,15 @@ async def test_concurrent_bookings_use_independent_waiting_connections(
     async with AsyncClient(
         transport=ASGITransport(app=postgres_app), base_url="http://test"
     ) as client:
+        stored = await client.get(
+            "/api/organizer/bookings",
+            headers={"Authorization": "Bearer test-organizer-key"},
+        )
+        assert_contract_response(stored)
+        assert {item["id"] for item in stored.json()["items"]} == {
+            response.json()["id"] for response in responses if response.status_code == 201
+        }
+        assert len(stored.json()["items"]) == expected.count(201)
         # Every successful HTTP confirmation remains occupied after all transactions finished.
         for response in responses:
             if response.status_code == 201:

@@ -43,7 +43,10 @@ import type {
   GetEventTypeSlots422,
   GetEventTypeSlots500,
   HealthStatus,
-  ListEventTypes500
+  ListEventTypes500,
+  ListOrganizerBookings401,
+  ListOrganizerBookings500,
+  OrganizerBookings
 } from './models';
 
 import { apiFetch } from '../http';
@@ -427,6 +430,104 @@ export function useGetHealth<TData = Awaited<ReturnType<typeof getHealth>>, TErr
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetHealthQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListOrganizerBookingsUrl = () => {
+
+
+
+
+  return `/api/organizer/bookings`
+}
+
+/**
+ * All bookings starting at or after now, ordered by start then UUID, without a window limit.
+ */
+export const listOrganizerBookings = async ( options?: Parameters<typeof apiFetch>[1]): Promise<OrganizerBookings> => {
+
+  return apiFetch<OrganizerBookings>(getListOrganizerBookingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOrganizerBookingsQueryKey = () => {
+    return [
+    `/api/organizer/bookings`
+    ] as const;
+    }
+
+
+export const getListOrganizerBookingsQueryOptions = <TData = Awaited<ReturnType<typeof listOrganizerBookings>>, TError = ErrorType<ListOrganizerBookings401 | ListOrganizerBookings500 | ApiError>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrganizerBookings>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOrganizerBookingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOrganizerBookings>>> = ({ signal }) => listOrganizerBookings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOrganizerBookings>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListOrganizerBookingsQueryResult = NonNullable<Awaited<ReturnType<typeof listOrganizerBookings>>>
+export type ListOrganizerBookingsQueryError = ErrorType<ListOrganizerBookings401 | ListOrganizerBookings500 | ApiError>
+
+
+export function useListOrganizerBookings<TData = Awaited<ReturnType<typeof listOrganizerBookings>>, TError = ErrorType<ListOrganizerBookings401 | ListOrganizerBookings500 | ApiError>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrganizerBookings>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listOrganizerBookings>>,
+          TError,
+          Awaited<ReturnType<typeof listOrganizerBookings>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListOrganizerBookings<TData = Awaited<ReturnType<typeof listOrganizerBookings>>, TError = ErrorType<ListOrganizerBookings401 | ListOrganizerBookings500 | ApiError>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrganizerBookings>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listOrganizerBookings>>,
+          TError,
+          Awaited<ReturnType<typeof listOrganizerBookings>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListOrganizerBookings<TData = Awaited<ReturnType<typeof listOrganizerBookings>>, TError = ErrorType<ListOrganizerBookings401 | ListOrganizerBookings500 | ApiError>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrganizerBookings>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useListOrganizerBookings<TData = Awaited<ReturnType<typeof listOrganizerBookings>>, TError = ErrorType<ListOrganizerBookings401 | ListOrganizerBookings500 | ApiError>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrganizerBookings>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListOrganizerBookingsQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
