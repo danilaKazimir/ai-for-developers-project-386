@@ -44,6 +44,8 @@ try {
   mkdirSync(join(outputRoot, 'api/generated'), { recursive: true });
   mkdirSync(join(outputRoot, 'backend/app/generated'), { recursive: true });
   if (check) {
+    // Match Ruff settings when codegen formats models outside the repository.
+    cpSync(join(root, 'pyproject.toml'), join(outputRoot, 'pyproject.toml'));
     mkdirSync(join(outputRoot, 'frontend/src/api'), { recursive: true });
     cpSync(join(root, 'frontend/src/api/http.ts'), join(outputRoot, 'frontend/src/api/http.ts'));
   }

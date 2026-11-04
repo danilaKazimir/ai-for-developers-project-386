@@ -1,0 +1,101 @@
+from hmac import compare_digest
+from typing import Annotated, Any
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import ConfigDict, field_validator
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.app.db import get_session
+from backend.app.generated.models import CreateEventTypeRequest, EventType, EventTypeCatalog
+from backend.app.models import EventTypeRecord
+
+router = APIRouter()
+bearer = HTTPBearer(auto_error=False)
+
+
+async def require_organizer(
+    request: Request,
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
+) -> None:
+    expected = request.app.state.settings.organizer_access_token
+    if (
+        not expected
+        or credentials is None
+        or not compare_digest(credentials.credentials.encode(), expected.encode())
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "code": "ORGANIZER_ACCESS_DENIED",
+                "message": "Введите корректный ключ управления.",
+            },
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+class EventTypeInput(CreateEventTypeRequest):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def trim_name(cls, value: Any) -> Any:
+        return value.strip() if isinstance(value, str) else value
+
+
+def event_type_response(record: EventTypeRecord) -> EventType:
+    return EventType(
+        id=record.id,
+        name=record.name,
+        description=record.description,
+        durationMinutes=record.duration_minutes,
+    )
+
+
+@router.post(
+    "/api/organizer/event-types",
+    status_code=201,
+    response_model=EventType,
+    dependencies=[Depends(require_organizer)],
+    operation_id="createEventType",
+)
+async def create_event_type(
+    body: EventTypeInput,
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> EventType:
+    record = EventTypeRecord(
+        id=body.id,
+        name=body.name,
+        description=body.description,
+        duration_minutes=body.durationMinutes,
+    )
+    session.add(record)
+    try:
+        await session.commit()
+    except IntegrityError as error:
+        await session.rollback()
+        original = error.orig
+        if (
+            getattr(original, "sqlstate", None) == "23505"
+            and getattr(getattr(original, "diag", None), "constraint_name", None)
+            == "event_types_pkey"
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "code": "EVENT_TYPE_ID_TAKEN",
+                    "message": "Этот id уже занят. Выберите другой.",
+                },
+            ) from error
+        raise
+    return event_type_response(record)
+
+
+@router.get("/api/event-types", response_model=EventTypeCatalog, operation_id="listEventTypes")
+async def list_event_types(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> EventTypeCatalog:
+    records = await session.scalars(select(EventTypeRecord).order_by(EventTypeRecord.id))
+    return EventTypeCatalog(items=[event_type_response(record) for record in records])

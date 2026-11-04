@@ -4,6 +4,41 @@ info:
   version: 0.1.0
 tags: []
 paths:
+  /api/event-types:
+    get:
+      operationId: listEventTypes
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventTypeCatalog'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - INTERNAL_ERROR
+                  message:
+                    type: string
+                required:
+                  - code
+                  - message
+                unevaluatedProperties:
+                  not: {}
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
   /api/health:
     get:
       operationId: getHealth
@@ -22,6 +57,103 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
+  /api/organizer/event-types:
+    post:
+      operationId: createEventType
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventType'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - ORGANIZER_ACCESS_DENIED
+                  message:
+                    type: string
+                required:
+                  - code
+                  - message
+                unevaluatedProperties:
+                  not: {}
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - EVENT_TYPE_ID_TAKEN
+                  message:
+                    type: string
+                required:
+                  - code
+                  - message
+                unevaluatedProperties:
+                  not: {}
+        '422':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - VALIDATION_ERROR
+                  message:
+                    type: string
+                required:
+                  - code
+                  - message
+                unevaluatedProperties:
+                  not: {}
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - INTERNAL_ERROR
+                  message:
+                    type: string
+                required:
+                  - code
+                  - message
+                unevaluatedProperties:
+                  not: {}
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventTypeRequest'
+      security:
+        - BearerAuth: []
 components:
   schemas:
     ApiError:
@@ -39,6 +171,73 @@ components:
       unevaluatedProperties:
         not: {}
       description: A public error without database connection details.
+    CreateEventTypeRequest:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - durationMinutes
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
+        name:
+          type: string
+          pattern: ^\s*\S(?:[\s\S]{0,118}\S)?\s*$
+        description:
+          type: string
+          maxLength: 2000
+        durationMinutes:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 540
+      unevaluatedProperties:
+        not: {}
+      description: Input name must have 1–120 characters after trimming surrounding whitespace.
+    EventType:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - durationMinutes
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+          description: Leading and trailing whitespace is removed before length validation.
+        description:
+          type: string
+          maxLength: 2000
+        durationMinutes:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 540
+      unevaluatedProperties:
+        not: {}
+      description: Meeting format shared by the organizer's single calendar.
+    EventTypeCatalog:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventType'
+      unevaluatedProperties:
+        not: {}
     HealthStatus:
       type: object
       required:
@@ -56,3 +255,7 @@ components:
       unevaluatedProperties:
         not: {}
       description: The API and its PostgreSQL connection are ready.
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: Bearer

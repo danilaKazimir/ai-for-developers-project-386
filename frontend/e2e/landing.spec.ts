@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test';
 
-test('организатор переходит к созданию календаря и возвращается на главную', async ({ page }) => {
+test('организатор переходит к созданию типа и возвращается на главную', async ({ page }) => {
   await page.goto('/');
   const hero = page.getByRole('region', { name: 'Договоритесь о звонке без лишней переписки', exact: true });
   await expect(hero.getByRole('heading', { level: 1 })).toBeVisible();
-  await hero.getByRole('link', { name: 'Создать календарь', exact: true }).click();
+  await hero.getByRole('link', { name: 'Создать тип события', exact: true }).click();
 
   await expect(page).toHaveURL('/calendars/new');
-  await expect(page.getByText('Функция в разработке', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Создать тип события', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Вернуться на главную', exact: true }).click();
 
   await expect(page).toHaveURL('/');
@@ -23,54 +23,55 @@ test('организатор может пройти основной сцена
 
   await page.keyboard.press('Tab');
   const hero = page.getByRole('region', { name: 'Договоритесь о звонке без лишней переписки', exact: true });
-  await expect(hero.getByRole('link', { name: 'Создать календарь', exact: true })).toBeFocused();
+  await expect(hero.getByRole('link', { name: 'Создать тип события', exact: true })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL('/calendars/new');
 
-  for (let step = 0; step < 3; step += 1) await page.keyboard.press('Tab');
-  await expect(page.getByRole('link', { name: 'Вернуться на главную', exact: true })).toBeFocused();
-  await page.keyboard.press('Enter');
-  await expect(page).toHaveURL('/');
+  await page.getByLabel('Ключ управления').focus();
+  await page.keyboard.press('Tab');
+  await expect(page.getByLabel('Id типа события')).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByLabel('Название', { exact: true })).toBeFocused();
 });
 
-test('страницу создания календаря можно открыть напрямую и обновить', async ({ page }) => {
+test('страницу создания типа можно открыть напрямую и обновить', async ({ page }) => {
   await page.goto('/calendars/new');
-  await expect(page.getByText('Функция в разработке', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Создать тип события', exact: true })).toBeVisible();
 
   await page.reload();
 
   await expect(page).toHaveURL('/calendars/new');
-  await expect(page.getByRole('heading', { level: 1, name: 'Создание календаря скоро появится', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Создать тип события', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Вернуться на главную', exact: true })).toBeVisible();
 });
 
-test('главная и заглушка работают без API и не запрашивают его', async ({ page }) => {
+test('главная и форма создания загружаются без API и не запрашивают его', async ({ page }) => {
   const apiRequests: string[] = [];
   page.on('request', (request) => {
     if (new URL(request.url()).pathname.startsWith('/api/')) apiRequests.push(request.url());
   });
-  await page.route('**/api/**', (route) => route.abort());
+  await page.route('http://127.0.0.1:15174/api/**', (route) => route.abort());
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: 'Договоритесь о звонке без лишней переписки', exact: true })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Создать календарь', exact: true }).first().click();
-  await expect(page.getByText('Функция в разработке', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Создать тип события', exact: true }).first().click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Создать тип события', exact: true })).toBeVisible();
 
   expect(apiRequests).toEqual([]);
 });
 
-test('кнопки в навигации и внизу главной ведут к созданию календаря', async ({ page }) => {
+test('кнопки в навигации и внизу главной ведут к созданию типа', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('navigation', { name: 'Основная навигация', exact: true })
-    .getByRole('link', { name: 'Создать календарь', exact: true }).click();
+    .getByRole('link', { name: 'Создать тип события', exact: true }).click();
   await expect(page).toHaveURL('/calendars/new');
-  await expect(page.getByText('Функция в разработке', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Создать тип события', exact: true })).toBeVisible();
 
   await page.getByRole('link', { name: 'Вернуться на главную', exact: true }).click();
   await page.getByRole('region', { name: 'Встречи начинаются с удобного времени', exact: true })
-    .getByRole('link', { name: 'Создать календарь', exact: true }).click();
+    .getByRole('link', { name: 'Создать тип события', exact: true }).click();
   await expect(page).toHaveURL('/calendars/new');
-  await expect(page.getByText('Функция в разработке', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Создать тип события', exact: true })).toBeVisible();
 });
 
 test('пример страницы записи показывает длительность и часовой пояс без элементов записи', async ({ page }) => {
@@ -94,8 +95,8 @@ for (const width of [320, 390]) {
     const landingWidth = await page.evaluate(() => ({ content: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
     expect(landingWidth.content).toBeLessThanOrEqual(landingWidth.viewport);
 
-    await hero.getByRole('link', { name: 'Создать календарь', exact: true }).click();
-    await expect(page.getByText('Функция в разработке', { exact: true })).toBeVisible();
+    await hero.getByRole('link', { name: 'Создать тип события', exact: true }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Создать тип события', exact: true })).toBeVisible();
     const placeholderWidth = await page.evaluate(() => ({ content: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
     expect(placeholderWidth.content).toBeLessThanOrEqual(placeholderWidth.viewport);
 
@@ -112,4 +113,20 @@ test('по адресу старой диагностики нет диагно�
 
   await page.getByRole('link', { name: 'Вернуться на главную', exact: true }).click();
   await expect(page).toHaveURL('/');
+});
+
+test('каталог показывает загрузку, ошибку с повтором и пустое состояние', async ({ page }) => {
+  let release: () => void = () => {};
+  const pending = new Promise<void>((resolve) => { release = resolve; });
+  await page.route('**/api/event-types', async (route) => {
+    await pending;
+    await route.fulfill({ status: 503, json: { code: 'DATABASE_UNAVAILABLE', message: 'Unavailable' } });
+  });
+  await page.goto('/event-types');
+  await expect(page.getByRole('status')).toHaveText('Загружаем типы событий…');
+  release();
+  await expect(page.getByRole('alert')).toContainText('Не удалось загрузить каталог');
+  await page.route('**/api/event-types', (route) => route.fulfill({ json: { items: [] } }));
+  await page.getByRole('button', { name: 'Повторить загрузку' }).click();
+  await expect(page.getByText('Типов событий пока нет. Организатор ещё не добавил встречи.')).toBeVisible();
 });

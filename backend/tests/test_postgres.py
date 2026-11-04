@@ -1,6 +1,4 @@
 import asyncio
-import os
-from collections.abc import AsyncIterator
 from typing import cast
 
 import pytest
@@ -9,40 +7,11 @@ from alembic.config import Config
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
-from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from backend.app.config import Settings
-from backend.app.main import create_app
 from backend.tests.contract import assert_contract_response
 
 pytestmark = pytest.mark.integration
-
-
-@pytest.fixture
-def test_database_url() -> str:
-    url = os.environ.get("TEST_DATABASE_URL")
-    if not url:
-        pytest.fail("TEST_DATABASE_URL is required; see README.md or run mise run test:unit")
-    test_url = make_url(url)
-    app_url = os.environ.get("DATABASE_URL")
-    if not test_url.database or not test_url.database.endswith("_test"):
-        pytest.fail("TEST_DATABASE_URL must use a dedicated database ending in _test")
-    if app_url and test_url == make_url(app_url):
-        pytest.fail("TEST_DATABASE_URL must differ from DATABASE_URL")
-    Settings(database_url=url)
-    return url
-
-
-@pytest.fixture
-async def postgres_app(
-    test_database_url: str, monkeypatch: pytest.MonkeyPatch
-) -> AsyncIterator[FastAPI]:
-    monkeypatch.setenv("DATABASE_URL", test_database_url)
-    await asyncio.to_thread(command.upgrade, Config("alembic.ini"), "head")
-    app = create_app(Settings(database_url=test_database_url))
-    async with app.router.lifespan_context(app):
-        yield app
 
 
 async def test_real_postgresql_health(postgres_app: FastAPI) -> None:
@@ -66,7 +35,7 @@ async def test_separate_sessions_for_parallel_work(postgres_app: FastAPI) -> Non
         assert rows[0] != rows[1]
 
 
-async def test_baseline_migration_roundtrip(
+async def test_migrations_roundtrip(
     test_database_url: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("DATABASE_URL", test_database_url)
@@ -77,8 +46,49 @@ async def test_baseline_migration_roundtrip(
     try:
         async with engine.connect() as connection:
             assert await connection.scalar(text("SELECT version_num FROM alembic_version")) == (
-                "0001_baseline"
+                "0002_event_types"
+            )
+            assert (
+                await connection.scalar(text("SELECT timezone FROM calendars WHERE id = 1"))
+                == "Europe/Moscow"
             )
         await asyncio.to_thread(command.check, config)
+        await asyncio.to_thread(command.downgrade, config, "0001_baseline")
+        async with engine.connect() as connection:
+            assert await connection.scalar(text("SELECT to_regclass('event_types')")) is None
+            assert await connection.scalar(text("SELECT to_regclass('calendars')")) is None
+        await asyncio.to_thread(command.upgrade, config, "head")
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        ("Bad", "Name", "", 30),
+        ("a" * 65, "Name", "", 30),
+        ("valid", " ", "", 30),
+        ("valid", "n" * 121, "", 30),
+        ("valid", "Name", "d" * 2001, 30),
+        ("valid", "Name", "", 0),
+        ("valid", "Name", "", 541),
+    ],
+)
+async def test_migration_enforces_event_type_constraints(
+    postgres_app: FastAPI, test_database_url: str, values: tuple[str, str, str, int]
+) -> None:
+    from sqlalchemy.exc import DataError, IntegrityError
+
+    engine = create_async_engine(test_database_url)
+    try:
+        with pytest.raises((IntegrityError, DataError)):
+            async with engine.begin() as connection:
+                await connection.execute(
+                    text(
+                        "INSERT INTO event_types (id, name, description, duration_minutes) "
+                        "VALUES (:id, :name, :description, :duration)"
+                    ),
+                    dict(zip(["id", "name", "description", "duration"], values, strict=True)),
+                )
     finally:
         await engine.dispose()

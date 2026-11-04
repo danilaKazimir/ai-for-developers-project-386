@@ -32,3 +32,59 @@ model ServiceUnavailableError {
 @operationId("getHealth")
 op getHealth(): HealthStatus | ServiceUnavailableError;
 
+/** Meeting format shared by the organizer's single calendar. */
+model EventType {
+  @minLength(1) @maxLength(64) @pattern("^[a-z0-9]+(-[a-z0-9]+)*$")
+  id: string;
+  /** Leading and trailing whitespace is removed before length validation. */
+  @minLength(1) @maxLength(120)
+  name: string;
+  @maxLength(2000)
+  description: string;
+  @minValue(1) @maxValue(540)
+  durationMinutes: int32;
+}
+
+/** Input name must have 1–120 characters after trimming surrounding whitespace. */
+model CreateEventTypeRequest {
+  id: EventType.id;
+  @pattern("^\\s*\\S(?:[\\s\\S]{0,118}\\S)?\\s*$")
+  name: string;
+  description: EventType.description;
+  durationMinutes: EventType.durationMinutes;
+}
+
+model EventTypeCatalog {
+  items: EventType[];
+}
+
+@error model AccessDeniedError {
+  @statusCode statusCode: 401;
+  @body body: { code: "ORGANIZER_ACCESS_DENIED"; message: string; };
+}
+@error model EventTypeConflictError {
+  @statusCode statusCode: 409;
+  @body body: { code: "EVENT_TYPE_ID_TAKEN"; message: string; };
+}
+@error model ValidationError {
+  @statusCode statusCode: 422;
+  @body body: { code: "VALIDATION_ERROR"; message: string; };
+}
+@error model InternalError {
+  @statusCode statusCode: 500;
+  @body body: { code: "INTERNAL_ERROR"; message: string; };
+}
+
+@route("/api/organizer/event-types")
+@post
+@useAuth(BearerAuth)
+@operationId("createEventType")
+op createEventType(@body eventType: CreateEventTypeRequest): {
+  @statusCode statusCode: 201;
+  @body body: EventType;
+} | AccessDeniedError | EventTypeConflictError | ValidationError | ServiceUnavailableError | InternalError;
+
+@route("/api/event-types")
+@get
+@operationId("listEventTypes")
+op listEventTypes(): EventTypeCatalog | ServiceUnavailableError | InternalError;

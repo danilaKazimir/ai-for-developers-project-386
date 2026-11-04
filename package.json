@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit -p frontend/tsconfig.json && tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p frontend/tsconfig.e2e.json",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:full": "playwright test --config playwright.full.config.ts",
     "build": "npm run typecheck && vite build --config frontend/vite.config.ts"
   },
   "dependencies": {

@@ -1,3 +1,5 @@
+import { CreateEventType, EventTypeCatalog } from './EventTypes';
+
 const createCalendarPath = '/calendars/new';
 
 const iconPaths = {
@@ -29,7 +31,7 @@ function Brand() {
 function CreateCalendarLink({ className = '' }: { className?: string }) {
   return (
     <a className={`button button-primary ${className}`} href={createCalendarPath}>
-      Создать календарь <Icon name="arrow" />
+      Создать тип события <Icon name="arrow" />
     </a>
   );
 }
@@ -96,7 +98,7 @@ function CalendarPreview() {
 }
 
 const steps = [
-  { icon: 'calendar', title: 'Задайте удобное время', description: 'Укажите даты, интервалы, длительность встреч и часовой пояс. Из этого сложится ваш календарь.' },
+  { icon: 'calendar', title: 'Создайте тип события', description: 'Задайте название, описание и длительность. Все типы используют один общий календарь организатора.' },
   { icon: 'link', title: 'Поделитесь ссылкой', description: 'Отправьте гостям одну ссылку в мессенджере или любым другим удобным способом.' },
   { icon: 'check', title: 'Гость выбирает время', description: 'Гость записывается на свободный слот. После подтверждения это время становится недоступно другим.' },
 ] as const;
@@ -108,7 +110,7 @@ function LandingPage() {
         <div className="hero-copy">
           <p className="eyebrow"><span className="small-line" /> Меньше сообщений. Больше встреч.</p>
           <h1 id="hero-title">Договоритесь о звонке <span>без лишней переписки</span></h1>
-          <p className="hero-description">Вы задаёте свободное время и отправляете ссылку. Гости сами выбирают подходящий момент для встречи.</p>
+          <p className="hero-description">Вы создаёте типы событий разной длительности и отправляете ссылку на каталог. Гости выбирают подходящий формат встречи.</p>
           <CreateCalendarLink />
           <p className="registration-note"><Icon name="check" /> Без регистрации для вас и ваших гостей</p>
         </div>
@@ -139,7 +141,7 @@ function LandingPage() {
           <div>
             <p className="eyebrow">Время для самого важного</p>
             <h2 id="closing-title">Встречи начинаются<br />с удобного времени</h2>
-            <p>Соберите свободные часы в календарь. Остальное — по ссылке.</p>
+            <p>Предлагайте разные встречи в одном общем календаре. Поделитесь каталогом или ссылкой на тип.</p>
           </div>
           <CreateCalendarLink />
         </div>
@@ -149,13 +151,6 @@ function LandingPage() {
 }
 
 const messagePages = {
-  create: {
-    title: 'Создание календаря — Календарь звонков',
-    icon: 'calendar',
-    eyebrow: 'Функция в разработке',
-    heading: 'Создание календаря скоро появится',
-    description: 'Здесь можно будет задать доступное время и получить ссылку для записи гостей. Мы ещё работаем над этой возможностью.',
-  },
   notFound: {
     title: 'Страница не найдена — Календарь звонков',
     icon: 'link',
@@ -184,17 +179,20 @@ function MessagePage({ content }: { content: MessagePageContent }) {
 export function App() {
   const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
   const isHomePage = pathname === '/';
-  const messagePage = pathname === createCalendarPath ? messagePages.create : messagePages.notFound;
+  const isCreatePage = pathname === createCalendarPath || pathname === '/organizer/event-types/new';
+  const isCatalogPage = pathname === '/event-types';
+  const messagePage = messagePages.notFound;
+  const title = isHomePage ? 'Календарь звонков — встречи без лишней переписки' : isCreatePage ? 'Создать тип события — Календарь звонков' : isCatalogPage ? 'Типы событий — Календарь звонков' : messagePage.title;
 
   return (
     <div className="app">
-      <title>{isHomePage ? 'Календарь звонков — встречи без лишней переписки' : messagePage.title}</title>
+      <title>{title}</title>
       <a className="skip-link" href="#main-content">Перейти к содержимому</a>
       <header className="site-header container">
         <Brand />
-        {isHomePage && <nav aria-label="Основная навигация"><a className="how-link" href="#how-it-works">Как это работает</a><CreateCalendarLink className="header-button" /></nav>}
+        <nav aria-label="Основная навигация"><a className="catalog-link" href="/event-types">Каталог</a>{isHomePage && <a className="how-link" href="#how-it-works">Как это работает</a>}{!isCreatePage && <CreateCalendarLink className="header-button" />}</nav>
       </header>
-      {isHomePage ? <LandingPage /> : <MessagePage content={messagePage} />}
+      {isHomePage ? <LandingPage /> : isCreatePage ? <CreateEventType /> : isCatalogPage ? <EventTypeCatalog /> : <MessagePage content={messagePage} />}
       <footer className="site-footer container"><span>Календарь звонков</span><p>Больше времени на разговор.</p></footer>
     </div>
   );

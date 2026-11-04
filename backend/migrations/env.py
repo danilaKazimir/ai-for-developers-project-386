@@ -5,6 +5,7 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from backend.app import models  # noqa: F401
 from backend.app.config import Settings
 from backend.app.db import Base
 

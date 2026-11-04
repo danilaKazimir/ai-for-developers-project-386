@@ -74,6 +74,10 @@ run = "npm exec -- playwright install --with-deps chromium"
 description = "Test the frontend in Chromium without the API or PostgreSQL"
 run = "npm run test:e2e"
 
+[tasks."test:e2e:full"]
+description = "Test organizer creation and public catalog with real API and PostgreSQL"
+run = "npm run test:e2e:full"
+
 [tasks."test:smoke"]
 description = "Check real API and Vite startup against TEST_DATABASE_URL"
 run = "node scripts/smoke.mjs"
@@ -89,6 +93,7 @@ run = [
   "npm run build",
   "node scripts/generate.mjs --check",
   "mise run test:e2e",
+  "mise run test:e2e:full",
   "node scripts/smoke.mjs",
 ]
 

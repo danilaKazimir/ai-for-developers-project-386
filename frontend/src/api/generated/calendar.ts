@@ -5,23 +5,35 @@
  * OpenAPI spec version: 0.1.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
 
 import type {
   ApiError,
-  HealthStatus
+  CreateEventType401,
+  CreateEventType409,
+  CreateEventType422,
+  CreateEventType500,
+  CreateEventTypeRequest,
+  EventType,
+  EventTypeCatalog,
+  HealthStatus,
+  ListEventTypes500
 } from './models';
 
 import { apiFetch } from '../http';
@@ -46,6 +58,101 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getListEventTypesUrl = () => {
+
+
+
+
+  return `/api/event-types`
+}
+
+export const listEventTypes = async ( options?: Parameters<typeof apiFetch>[1]): Promise<EventTypeCatalog> => {
+
+  return apiFetch<EventTypeCatalog>(getListEventTypesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListEventTypesQueryKey = () => {
+    return [
+    `/api/event-types`
+    ] as const;
+    }
+
+
+export const getListEventTypesQueryOptions = <TData = Awaited<ReturnType<typeof listEventTypes>>, TError = ErrorType<ListEventTypes500 | ApiError>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listEventTypes>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListEventTypesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listEventTypes>>> = ({ signal }) => listEventTypes({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listEventTypes>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListEventTypesQueryResult = NonNullable<Awaited<ReturnType<typeof listEventTypes>>>
+export type ListEventTypesQueryError = ErrorType<ListEventTypes500 | ApiError>
+
+
+export function useListEventTypes<TData = Awaited<ReturnType<typeof listEventTypes>>, TError = ErrorType<ListEventTypes500 | ApiError>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listEventTypes>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listEventTypes>>,
+          TError,
+          Awaited<ReturnType<typeof listEventTypes>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListEventTypes<TData = Awaited<ReturnType<typeof listEventTypes>>, TError = ErrorType<ListEventTypes500 | ApiError>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listEventTypes>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listEventTypes>>,
+          TError,
+          Awaited<ReturnType<typeof listEventTypes>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListEventTypes<TData = Awaited<ReturnType<typeof listEventTypes>>, TError = ErrorType<ListEventTypes500 | ApiError>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listEventTypes>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useListEventTypes<TData = Awaited<ReturnType<typeof listEventTypes>>, TError = ErrorType<ListEventTypes500 | ApiError>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listEventTypes>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListEventTypesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetHealthUrl = () => {
 
@@ -144,4 +251,86 @@ export function useGetHealth<TData = Awaited<ReturnType<typeof getHealth>>, TErr
 
 
 
+
+export const getCreateEventTypeUrl = () => {
+
+
+
+
+  return `/api/organizer/event-types`
+}
+
+export const createEventType = async (createEventTypeRequest: CreateEventTypeRequest, options?: Parameters<typeof apiFetch>[1]): Promise<EventType> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiFetch<EventType>(getCreateEventTypeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createEventTypeRequest)
+  }
+);}
+
+
+
+
+
+export const getCreateEventTypeMutationKey = () => ['createEventType'] as const;
+
+export const getCreateEventTypeMutationOptions = <TError = ErrorType<CreateEventType401 | CreateEventType409 | CreateEventType422 | CreateEventType500 | ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEventType>>, TError,CreateEventTypeMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createEventType>>, TError,CreateEventTypeMutationVariables, TContext> => {
+
+const mutationKey = getCreateEventTypeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createEventType>>, CreateEventTypeMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createEventType(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateEventTypeMutationResult = NonNullable<Awaited<ReturnType<typeof createEventType>>>
+    export type CreateEventTypeMutationBody = CreateEventTypeRequest
+    export type CreateEventTypeMutationError = ErrorType<CreateEventType401 | CreateEventType409 | CreateEventType422 | CreateEventType500 | ApiError>
+    export type CreateEventTypeMutationVariables = {data: CreateEventTypeRequest}
+
+    export const useCreateEventType = <TError = ErrorType<CreateEventType401 | CreateEventType409 | CreateEventType422 | CreateEventType500 | ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEventType>>, TError,CreateEventTypeMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createEventType>>,
+        TError,
+        CreateEventTypeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateEventTypeMutationOptions(options), queryClient);
+    }
 

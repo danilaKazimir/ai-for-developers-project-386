@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 from enum import StrEnum
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Code(StrEnum):
@@ -20,6 +20,46 @@ class ApiError(BaseModel):
     )
     code: Code
     message: str
+
+
+class CreateEventTypeRequest(BaseModel):
+    """
+    Input name must have 1–120 characters after trimming surrounding whitespace.
+    """
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    id: str = Field(..., max_length=64, min_length=1, pattern="^[a-z0-9]+(-[a-z0-9]+)*$")
+    name: str = Field(..., pattern="^\\s*\\S(?:[\\s\\S]{0,118}\\S)?\\s*$")
+    description: str = Field(..., max_length=2000)
+    durationMinutes: int = Field(..., ge=1, le=540)
+
+
+class EventType(BaseModel):
+    """
+    Meeting format shared by the organizer's single calendar.
+    """
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    id: str = Field(..., max_length=64, min_length=1, pattern="^[a-z0-9]+(-[a-z0-9]+)*$")
+    name: str = Field(
+        ...,
+        description="Leading and trailing whitespace is removed before length validation.",
+        max_length=120,
+        min_length=1,
+    )
+    description: str = Field(..., max_length=2000)
+    durationMinutes: int = Field(..., ge=1, le=540)
+
+
+class EventTypeCatalog(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    items: list[EventType]
 
 
 class Status(StrEnum):

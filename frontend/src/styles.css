@@ -221,3 +221,30 @@ h1, h2, h3, p, figure { margin: 0; }
   .button { transition: none; }
 }
 
+
+.workspace { padding-block: 48px 72px; }
+.workspace h1 { margin-top: 12px; font-size: clamp(30px, 5vw, 44px); letter-spacing: -.04em; }
+.page-intro { max-width: 680px; line-height: 1.8; color: var(--muted); margin: 18px 0 30px; }
+.catalog-link { font-size: 13px; color: var(--blue); }
+.event-form { display: grid; gap: 14px; max-width: 620px; }
+.event-form label { display: grid; gap: 8px; font-size: 14px; font-weight: 600; }
+.event-form input, .event-form textarea { width: 100%; min-width: 0; padding: 12px; border: 1px solid #b9c5db; border-radius: 8px; font: inherit; background: white; color: inherit; }
+.event-form input:focus-visible, .event-form textarea:focus-visible, button:focus-visible { outline: 3px solid #7292f0; outline-offset: 3px; }
+.field-hint { color: var(--muted); font-size: 12px; line-height: 1.7; margin-top: -6px; }
+button { font: inherit; cursor: pointer; border: 0; }
+button:disabled { opacity: .65; cursor: wait; }
+.form-error { padding: 14px; background: #fff0ef; color: #8b2822; border-radius: 8px; line-height: 1.7; }
+.text-link { color: var(--blue); text-decoration: underline; text-underline-offset: 3px; background: none; padding: 10px 0; display: inline-block; }
+.creation-success { max-width: 620px; margin-top: 28px; background: #eef8f2; padding: 24px; border-radius: 12px; line-height: 1.8; }
+.public-url, .event-id { overflow-wrap: anywhere; color: var(--muted); font-size: 13px; }
+.event-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 20px; }
+.event-card { min-width: 0; padding: 24px; border: 1px solid var(--border); background: white; border-radius: 12px; overflow-wrap: anywhere; }
+.event-card h2 { margin: 12px 0; font-size: 23px; }
+.event-description { line-height: 1.7; white-space: pre-wrap; margin-bottom: 18px; }
+.empty-state { padding: 24px; border: 1px solid var(--border); border-radius: 12px; line-height: 1.8; }
+@media (max-width: 560px) {
+  .site-header { flex-wrap: wrap; padding-block: 16px; }
+  .site-header nav { gap: 14px; }
+  .workspace { padding-block: 32px 48px; }
+  .workspace h1 { font-size: 32px; }
+}
