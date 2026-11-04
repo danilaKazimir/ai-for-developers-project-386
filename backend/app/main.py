@@ -10,6 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import InterfaceError, OperationalError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from backend.app.bookings import router as bookings_router
 from backend.app.config import Settings
 from backend.app.db import get_session
 from backend.app.event_types import router
@@ -25,6 +26,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         engine = create_async_engine(
             config.database_url,
             pool_pre_ping=True,
+            isolation_level="READ COMMITTED",
             connect_args={"connect_timeout": 3},
         )
         app.state.session_factory = async_sessionmaker(engine, expire_on_commit=False)
@@ -36,6 +38,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="Call Calendar API", version="0.1.0", lifespan=lifespan)
 
     app.include_router(router)
+    app.include_router(bookings_router)
 
     @app.exception_handler(HTTPException)
     async def http_error(request: Request, error: HTTPException) -> JSONResponse:
@@ -50,8 +53,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             content={
                 "code": "VALIDATION_ERROR",
                 "message": (
-                    "Проверьте id, название (1–120 символов), описание (до 2000) "
-                    "и длительность (целое число 1–540 минут)."
+                    "Проверьте поля формы: id, время с часовым поясом, имя (1–120 символов), "
+                    "email (до 254), комментарий или описание (до 2000) и длительность (1–540)."
                 ),
             },
         )

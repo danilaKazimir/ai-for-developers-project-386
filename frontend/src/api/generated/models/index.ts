@@ -7,6 +7,17 @@
 
 export * from './apiError';
 export * from './apiErrorCode';
+export * from './bookingConfirmation';
+export * from './bookingGuest';
+export * from './createBooking404';
+export * from './createBooking404Code';
+export * from './createBooking409';
+export * from './createBooking409Code';
+export * from './createBooking422';
+export * from './createBooking422Code';
+export * from './createBooking500';
+export * from './createBooking500Code';
+export * from './createBookingRequest';
 export * from './createEventType401';
 export * from './createEventType401Code';
 export * from './createEventType409';

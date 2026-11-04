@@ -17,7 +17,7 @@ from backend.app.generated.models import (
     EventTypeCatalog,
     EventTypeSlots,
 )
-from backend.app.models import Calendar, EventTypeRecord
+from backend.app.models import BookingRecord, Calendar, EventTypeRecord
 from backend.app.scheduling import get_now, schedule_days
 
 router = APIRouter()
@@ -132,10 +132,30 @@ async def get_event_type_slots(
         raise RuntimeError("The common calendar has not been initialized")
     zone = ZoneInfo(calendar.timezone)
     today = now.astimezone(zone).date()
+    days = schedule_days(record.duration_minutes, now, zone)
+    candidates = [slot for day in days for slot in day.slots]
+    if candidates:
+        busy = list(
+            await session.scalars(
+                select(BookingRecord).where(
+                    BookingRecord.starts_at < max(slot.endsAt for slot in candidates),
+                    BookingRecord.ends_at > min(slot.startsAt for slot in candidates),
+                )
+            )
+        )
+        for day in days:
+            day.slots = [
+                slot
+                for slot in day.slots
+                if not any(
+                    slot.startsAt < booking.ends_at and booking.starts_at < slot.endsAt
+                    for booking in busy
+                )
+            ]
     return EventTypeSlots(
         eventType=event_type_response(record),
         timezone=calendar.timezone,
         windowStartDate=today,
         windowEndDateExclusive=today + timedelta(days=14),
-        days=schedule_days(record.duration_minutes, now, zone),
+        days=days,
     )

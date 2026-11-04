@@ -5,6 +5,7 @@ description = "Call calendar API scaffold"
 requires-python = ">=3.13"
 dependencies = [
   "alembic==1.20.1",
+  "email-validator==2.3.0",
   "fastapi==0.162.0",
   "psycopg[binary]==3.3.6",
   "pydantic==2.14.2",

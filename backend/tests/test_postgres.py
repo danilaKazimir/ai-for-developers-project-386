@@ -46,7 +46,7 @@ async def test_migrations_roundtrip(
     try:
         async with engine.connect() as connection:
             assert await connection.scalar(text("SELECT version_num FROM alembic_version")) == (
-                "0002_event_types"
+                "0003_bookings"
             )
             assert (
                 await connection.scalar(text("SELECT timezone FROM calendars WHERE id = 1"))

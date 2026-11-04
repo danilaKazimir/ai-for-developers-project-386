@@ -24,7 +24,7 @@ test('гость из каталога выбирает дату и время �
   await page.keyboard.press('Enter');
   await expect(page.getByRole('status')).toContainText('Выбрано время');
   await expect(page.getByRole('status')).toContainText('45 минут');
-  await expect(page.getByRole('button', { name: /Подтвердить/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Подтвердить запись' })).toBeEnabled();
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Обсуждение проекта' })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });

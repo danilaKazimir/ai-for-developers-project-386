@@ -1,6 +1,7 @@
 import asyncio
 import os
 from collections.abc import AsyncIterator
+from uuid import uuid4
 
 import pytest
 from alembic import command
@@ -37,13 +38,19 @@ async def postgres_app(
     await asyncio.to_thread(command.upgrade, Config("alembic.ini"), "head")
     engine = create_async_engine(test_database_url)
     async with engine.begin() as connection:
+        await connection.execute(text("DELETE FROM bookings"))
         await connection.execute(text("DELETE FROM event_types"))
         await connection.execute(
             text("UPDATE calendars SET timezone = 'Europe/Moscow' WHERE id = 1")
         )
     await engine.dispose()
     app = create_app(
-        Settings(database_url=test_database_url, organizer_access_token="test-organizer-key")
+        Settings(
+            database_url=make_url(test_database_url)
+            .update_query_dict({"application_name": f"booking-test-{uuid4()}"})
+            .render_as_string(hide_password=False),
+            organizer_access_token="test-organizer-key",
+        )
     )
     async with app.router.lifespan_context(app):
         try:

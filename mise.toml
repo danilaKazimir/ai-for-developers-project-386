@@ -75,7 +75,7 @@ description = "Test the frontend in Chromium without the API or PostgreSQL"
 run = "npm run test:e2e"
 
 [tasks."test:e2e:full"]
-description = "Test creation, catalog and slot selection with real API and PostgreSQL"
+description = "Test creation, catalog and booking with real API and PostgreSQL"
 run = "npm run test:e2e:full"
 
 [tasks."test:smoke"]

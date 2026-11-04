@@ -1,4 +1,8 @@
-from sqlalchemy import CheckConstraint, Integer, String
+from datetime import datetime
+from uuid import UUID, uuid4
+
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, column, func
+from sqlalchemy.dialects.postgresql import ExcludeConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.app.db import Base
@@ -26,3 +30,27 @@ class EventTypeRecord(Base):
     name: Mapped[str] = mapped_column(String(120))
     description: Mapped[str] = mapped_column(String(2000))
     duration_minutes: Mapped[int] = mapped_column(Integer)
+
+
+BOOKING_OVERLAP_CONSTRAINT = "ex_bookings_overlap"
+
+
+class BookingRecord(Base):
+    __tablename__ = "bookings"
+    __table_args__ = (
+        CheckConstraint("starts_at < ends_at", name="ck_booking_positive_interval"),
+        CheckConstraint("isfinite(starts_at) AND isfinite(ends_at)", name="ck_booking_finite"),
+        ExcludeConstraint(
+            (func.tstzrange(column("starts_at"), column("ends_at"), "[)"), "&&"),
+            using="gist",
+            name=BOOKING_OVERLAP_CONSTRAINT,
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    event_type_id: Mapped[str] = mapped_column(ForeignKey("event_types.id"))
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    guest_name: Mapped[str] = mapped_column(String(120))
+    guest_email: Mapped[str] = mapped_column(String(254))
+    guest_comment: Mapped[str] = mapped_column(String(2000), default="")

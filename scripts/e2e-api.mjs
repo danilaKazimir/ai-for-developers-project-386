@@ -6,6 +6,17 @@ if (!database || !new URL(database).pathname.endsWith('_test') || database === p
 }
 const env = { ...process.env, DATABASE_URL: database, ORGANIZER_ACCESS_TOKEN: 'playwright-only-key' };
 execFileSync('uv', ['run', '--frozen', 'alembic', 'upgrade', 'head'], { env, stdio: 'inherit' });
+// Every full-stack profile starts from empty data in its dedicated test database.
+execFileSync('uv', ['run', '--frozen', 'python', '-c', `
+import os
+from sqlalchemy import create_engine, text
+engine = create_engine(os.environ['DATABASE_URL'])
+with engine.begin() as connection:
+    connection.execute(text('DELETE FROM bookings'))
+    connection.execute(text('DELETE FROM event_types'))
+    connection.execute(text("UPDATE calendars SET timezone = 'Europe/Moscow' WHERE id = 1"))
+engine.dispose()
+`], { env, stdio: 'inherit' });
 const api = spawn('uv', ['run', '--frozen', 'uvicorn', 'backend.app.main:create_app', '--factory', '--host', '127.0.0.1', '--port', '18001'], { env, stdio: 'inherit' });
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => api.kill(signal));
 api.on('exit', (code) => process.exit(code ?? 1));

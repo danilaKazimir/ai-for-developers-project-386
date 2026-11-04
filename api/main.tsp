@@ -118,3 +118,44 @@ model EventTypeSlots {
 @operationId("getEventTypeSlots")
 op getEventTypeSlots(@path eventTypeId: EventType.id): EventTypeSlots
   | EventTypeNotFoundError | ValidationError | ServiceUnavailableError | InternalError;
+
+model BookingGuest {
+  @pattern("^\\s*\\S(?:[\\s\\S]{0,118}\\S)?\\s*$")
+  name: string;
+  @format("email") @maxLength(254)
+  email: string;
+  @maxLength(2000)
+  comment?: string;
+}
+
+model CreateBookingRequest {
+  eventTypeId: EventType.id;
+  startsAt: utcDateTime;
+  guest: BookingGuest;
+}
+
+/** Confirmation contains only the newly created booking, never guest contacts. */
+model BookingConfirmation {
+  @format("uuid") id: string;
+  eventType: EventType;
+  startsAt: utcDateTime;
+  endsAt: utcDateTime;
+  timezone: string;
+}
+
+@error model TimeConflictError {
+  @statusCode statusCode: 409;
+  @body body: { code: "TIME_CONFLICT"; message: string; };
+}
+@error model BookingValidationError {
+  @statusCode statusCode: 422;
+  @body body: { code: "VALIDATION_ERROR" | "SLOT_NOT_BOOKABLE"; message: string; };
+}
+
+@route("/api/bookings")
+@post
+@operationId("createBooking")
+op createBooking(@body booking: CreateBookingRequest): {
+  @statusCode statusCode: 201;
+  @body body: BookingConfirmation;
+} | EventTypeNotFoundError | TimeConflictError | BookingValidationError | ServiceUnavailableError | InternalError;

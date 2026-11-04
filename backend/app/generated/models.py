@@ -3,8 +3,9 @@
 
 from __future__ import annotations
 from enum import StrEnum
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field
 from datetime import date as date_aliased
+from uuid import UUID
 
 
 class Code(StrEnum):
@@ -21,6 +22,24 @@ class ApiError(BaseModel):
     )
     code: Code
     message: str
+
+
+class BookingGuest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    name: str = Field(..., pattern="^\\s*\\S(?:[\\s\\S]{0,118}\\S)?\\s*$")
+    email: EmailStr = Field(..., max_length=254)
+    comment: str | None = Field(None, max_length=2000)
+
+
+class CreateBookingRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    eventTypeId: str = Field(..., max_length=64, min_length=1, pattern="^[a-z0-9]+(-[a-z0-9]+)*$")
+    startsAt: AwareDatetime
+    guest: BookingGuest
 
 
 class CreateEventTypeRequest(BaseModel):
@@ -101,6 +120,21 @@ class SlotDay(BaseModel):
     )
     date: date_aliased
     slots: list[Slot]
+
+
+class BookingConfirmation(BaseModel):
+    """
+    Confirmation contains only the newly created booking, never guest contacts.
+    """
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    id: UUID
+    eventType: EventType
+    startsAt: AwareDatetime
+    endsAt: AwareDatetime
+    timezone: str
 
 
 class EventTypeSlots(BaseModel):
