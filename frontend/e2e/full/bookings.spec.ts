@@ -1,6 +1,34 @@
 import { expect, test } from '@playwright/test';
+import type { OrganizerBookings } from '../../src/api/generated/models';
 
 test.use({ timezoneId: 'America/Los_Angeles' });
+
+test('имя гостя из 120 символов сохраняется целиком после удаления крайних пробелов', async ({ page, request }) => {
+  const id = `padded-name-${Date.now()}`;
+  const name = `${'И'.repeat(119)}я`;
+  expect((await request.post('/api/organizer/event-types', {
+    headers: { Authorization: 'Bearer playwright-only-key' },
+    data: { id, name: id, description: '', durationMinutes: 30 },
+  })).status()).toBe(201);
+  const calendar = await (await request.get(`/api/event-types/${id}/slots`)).json();
+  const day = calendar.days.find((entry: { slots: unknown[] }) => entry.slots.length > 0);
+  await page.goto(`/event-types/${id}`);
+  await page.getByRole('button', { name: day.date, exact: true }).click();
+  await page.getByRole('group', { name: 'Свободное время' }).getByRole('button').first().click();
+  await page.getByLabel('Ваше имя').fill(`  ${name}  `);
+  await page.getByLabel('Email').fill('padded-name@example.com');
+  await page.getByRole('button', { name: 'Подтвердить запись' }).click();
+  await expect(page.getByRole('heading', { name: 'Встреча подтверждена' })).toBeVisible();
+
+  const response = await request.get('/api/organizer/bookings', {
+    headers: { Authorization: 'Bearer playwright-only-key' },
+  });
+  expect(response.status()).toBe(200);
+  const bookings: OrganizerBookings = await response.json();
+  const saved = bookings.items.filter((booking) => booking.eventType.id === id);
+  expect(saved).toHaveLength(1);
+  expect(saved[0].guest.name).toBe(name);
+});
 
 for (const conflict of [false, true]) {
   test(conflict ? 'занятый после выбора слот даёт конфликт и сохраняет контакты для повторной записи' : 'гость проходит из каталога к подтверждённой встрече', async ({ page, request }) => {

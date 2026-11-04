@@ -151,7 +151,7 @@ export function SlotCalendar({ eventTypeId }: { eventTypeId: string }) {
         </section>}
         <form className="event-form" onSubmit={submit}>
           <h2>Контактные данные</h2>
-          <label>Ваше имя<input required readOnly={booking.isPending} maxLength={120} pattern="\s*\S(?:[\s\S]{0,118}\S)?\s*" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} /></label>
+          <label>Ваше имя<input required readOnly={booking.isPending} pattern="\s*\S(?:[\s\S]{0,118}\S)?\s*" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} /></label>
           <label>Email<input required readOnly={booking.isPending} type="email" maxLength={254} autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
           <label>Комментарий<textarea readOnly={booking.isPending} maxLength={2000} rows={4} value={comment} onChange={(event) => setComment(event.target.value)} /></label>
           {bookingError && <div role="alert"><p>{bookingError}</p><button type="button" className="text-link" onClick={() => { setStart(null); refreshAvailability(); }}>Обновить доступность</button></div>}
