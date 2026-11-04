@@ -88,3 +88,33 @@ op createEventType(@body eventType: CreateEventTypeRequest): {
 @get
 @operationId("listEventTypes")
 op listEventTypes(): EventTypeCatalog | ServiceUnavailableError | InternalError;
+
+/** A real interval, normalized to UTC in responses. */
+model Slot {
+  startsAt: utcDateTime;
+  endsAt: utcDateTime;
+}
+
+model SlotDay {
+  date: plainDate;
+  slots: Slot[];
+}
+
+model EventTypeSlots {
+  eventType: EventType;
+  timezone: string;
+  windowStartDate: plainDate;
+  windowEndDateExclusive: plainDate;
+  days: SlotDay[];
+}
+
+@error model EventTypeNotFoundError {
+  @statusCode statusCode: 404;
+  @body body: { code: "EVENT_TYPE_NOT_FOUND"; message: string; };
+}
+
+@route("/api/event-types/{eventTypeId}/slots")
+@get
+@operationId("getEventTypeSlots")
+op getEventTypeSlots(@path eventTypeId: EventType.id): EventTypeSlots
+  | EventTypeNotFoundError | ValidationError | ServiceUnavailableError | InternalError;

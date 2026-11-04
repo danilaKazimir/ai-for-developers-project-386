@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -20,6 +21,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         config = settings if settings is not None else Settings()
         app.state.settings = config
+        app.state.clock = lambda: datetime.now(UTC)
         engine = create_async_engine(
             config.database_url,
             pool_pre_ping=True,

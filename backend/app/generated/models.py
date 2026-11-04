@@ -3,7 +3,8 @@
 
 from __future__ import annotations
 from enum import StrEnum
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
+from datetime import date as date_aliased
 
 
 class Code(StrEnum):
@@ -80,3 +81,34 @@ class HealthStatus(BaseModel):
     )
     status: Status
     database: Database
+
+
+class Slot(BaseModel):
+    """
+    A real interval, normalized to UTC in responses.
+    """
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    startsAt: AwareDatetime
+    endsAt: AwareDatetime
+
+
+class SlotDay(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    date: date_aliased
+    slots: list[Slot]
+
+
+class EventTypeSlots(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    eventType: EventType
+    timezone: str
+    windowStartDate: date_aliased
+    windowEndDateExclusive: date_aliased
+    days: list[SlotDay]

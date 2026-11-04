@@ -1,4 +1,5 @@
 import { CreateEventType, EventTypeCatalog } from './EventTypes';
+import { SlotCalendar } from './SlotCalendar';
 
 const createCalendarPath = '/calendars/new';
 
@@ -181,8 +182,9 @@ export function App() {
   const isHomePage = pathname === '/';
   const isCreatePage = pathname === createCalendarPath || pathname === '/organizer/event-types/new';
   const isCatalogPage = pathname === '/event-types';
+  const eventTypeId = /^\/event-types\/([^/]+)$/.exec(pathname)?.[1];
   const messagePage = messagePages.notFound;
-  const title = isHomePage ? 'Календарь звонков — встречи без лишней переписки' : isCreatePage ? 'Создать тип события — Календарь звонков' : isCatalogPage ? 'Типы событий — Календарь звонков' : messagePage.title;
+  const title = isHomePage ? 'Календарь звонков — встречи без лишней переписки' : isCreatePage ? 'Создать тип события — Календарь звонков' : isCatalogPage ? 'Типы событий — Календарь звонков' : eventTypeId ? 'Выбрать время — Календарь звонков' : messagePage.title;
 
   return (
     <div className="app">
@@ -192,7 +194,7 @@ export function App() {
         <Brand />
         <nav aria-label="Основная навигация"><a className="catalog-link" href="/event-types">Каталог</a>{isHomePage && <a className="how-link" href="#how-it-works">Как это работает</a>}{!isCreatePage && <CreateCalendarLink className="header-button" />}</nav>
       </header>
-      {isHomePage ? <LandingPage /> : isCreatePage ? <CreateEventType /> : isCatalogPage ? <EventTypeCatalog /> : <MessagePage content={messagePage} />}
+      {isHomePage ? <LandingPage /> : isCreatePage ? <CreateEventType /> : isCatalogPage ? <EventTypeCatalog /> : eventTypeId ? <SlotCalendar eventTypeId={eventTypeId} /> : <MessagePage content={messagePage} />}
       <footer className="site-footer container"><span>Календарь звонков</span><p>Больше времени на разговор.</p></footer>
     </div>
   );

@@ -1,7 +1,9 @@
+from datetime import datetime, timedelta
 from hmac import compare_digest
 from typing import Annotated, Any
+from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Path, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import ConfigDict, field_validator
 from sqlalchemy import select
@@ -9,8 +11,14 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db import get_session
-from backend.app.generated.models import CreateEventTypeRequest, EventType, EventTypeCatalog
-from backend.app.models import EventTypeRecord
+from backend.app.generated.models import (
+    CreateEventTypeRequest,
+    EventType,
+    EventTypeCatalog,
+    EventTypeSlots,
+)
+from backend.app.models import Calendar, EventTypeRecord
+from backend.app.scheduling import get_now, schedule_days
 
 router = APIRouter()
 bearer = HTTPBearer(auto_error=False)
@@ -99,3 +107,35 @@ async def list_event_types(
 ) -> EventTypeCatalog:
     records = await session.scalars(select(EventTypeRecord).order_by(EventTypeRecord.id))
     return EventTypeCatalog(items=[event_type_response(record) for record in records])
+
+
+@router.get(
+    "/api/event-types/{eventTypeId}/slots",
+    response_model=EventTypeSlots,
+    operation_id="getEventTypeSlots",
+)
+async def get_event_type_slots(
+    eventTypeId: Annotated[
+        str, Path(min_length=1, max_length=64, pattern=r"^[a-z0-9]+(-[a-z0-9]+)*$")
+    ],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    now: Annotated[datetime, Depends(get_now)],
+) -> EventTypeSlots:
+    record = await session.get(EventTypeRecord, eventTypeId)
+    if record is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "EVENT_TYPE_NOT_FOUND", "message": "Тип события не найден."},
+        )
+    calendar = await session.get(Calendar, 1)
+    if calendar is None:
+        raise RuntimeError("The common calendar has not been initialized")
+    zone = ZoneInfo(calendar.timezone)
+    today = now.astimezone(zone).date()
+    return EventTypeSlots(
+        eventType=event_type_response(record),
+        timezone=calendar.timezone,
+        windowStartDate=today,
+        windowEndDateExclusive=today + timedelta(days=14),
+        days=schedule_days(record.duration_minutes, now, zone),
+    )

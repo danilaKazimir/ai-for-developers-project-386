@@ -20,6 +20,24 @@ def assert_contract_response(response: Response) -> None:
     ]
     assert len(matching) == 1, f"No unique canonical operation for {response.request.url.path}"
     operation = contract["paths"][matching[0]][response.request.method.lower()]
+    if response.is_success:
+        template = matching[0]
+        path_match = re.fullmatch(
+            re.sub(r"\{[^}]+\}", "([^/]+)", template), response.request.url.path
+        )
+        assert path_match is not None
+        values = dict(
+            zip(
+                re.findall(r"\{([^}]+)\}", template),
+                path_match.groups(),
+                strict=True,
+            )
+        )
+        for parameter in operation.get("parameters", []):
+            if parameter["in"] == "path":
+                Draft202012Validator(
+                    {**contract, **parameter["schema"]}, format_checker=FormatChecker()
+                ).validate(values[parameter["name"]])
     declared = operation["responses"][str(response.status_code)]
     media_type = response.headers["content-type"].split(";")[0]
     schema = declared["content"][media_type]["schema"]

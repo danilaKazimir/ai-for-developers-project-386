@@ -32,6 +32,10 @@ import type {
   CreateEventTypeRequest,
   EventType,
   EventTypeCatalog,
+  EventTypeSlots,
+  GetEventTypeSlots404,
+  GetEventTypeSlots422,
+  GetEventTypeSlots500,
   HealthStatus,
   ListEventTypes500
 } from './models';
@@ -142,6 +146,101 @@ export function useListEventTypes<TData = Awaited<ReturnType<typeof listEventTyp
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getListEventTypesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetEventTypeSlotsUrl = (eventTypeId: string,) => {
+
+
+
+
+  return `/api/event-types/${eventTypeId}/slots`
+}
+
+export const getEventTypeSlots = async (eventTypeId: string, options?: Parameters<typeof apiFetch>[1]): Promise<EventTypeSlots> => {
+
+  return apiFetch<EventTypeSlots>(getGetEventTypeSlotsUrl(eventTypeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEventTypeSlotsQueryKey = (eventTypeId: string,) => {
+    return [
+    `/api/event-types/${eventTypeId}/slots`
+    ] as const;
+    }
+
+
+export const getGetEventTypeSlotsQueryOptions = <TData = Awaited<ReturnType<typeof getEventTypeSlots>>, TError = ErrorType<GetEventTypeSlots404 | GetEventTypeSlots422 | GetEventTypeSlots500 | ApiError>>(eventTypeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventTypeSlots>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEventTypeSlotsQueryKey(eventTypeId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEventTypeSlots>>> = ({ signal }) => getEventTypeSlots(eventTypeId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: eventTypeId !== null && eventTypeId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEventTypeSlots>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetEventTypeSlotsQueryResult = NonNullable<Awaited<ReturnType<typeof getEventTypeSlots>>>
+export type GetEventTypeSlotsQueryError = ErrorType<GetEventTypeSlots404 | GetEventTypeSlots422 | GetEventTypeSlots500 | ApiError>
+
+
+export function useGetEventTypeSlots<TData = Awaited<ReturnType<typeof getEventTypeSlots>>, TError = ErrorType<GetEventTypeSlots404 | GetEventTypeSlots422 | GetEventTypeSlots500 | ApiError>>(
+ eventTypeId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventTypeSlots>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEventTypeSlots>>,
+          TError,
+          Awaited<ReturnType<typeof getEventTypeSlots>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEventTypeSlots<TData = Awaited<ReturnType<typeof getEventTypeSlots>>, TError = ErrorType<GetEventTypeSlots404 | GetEventTypeSlots422 | GetEventTypeSlots500 | ApiError>>(
+ eventTypeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventTypeSlots>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEventTypeSlots>>,
+          TError,
+          Awaited<ReturnType<typeof getEventTypeSlots>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEventTypeSlots<TData = Awaited<ReturnType<typeof getEventTypeSlots>>, TError = ErrorType<GetEventTypeSlots404 | GetEventTypeSlots422 | GetEventTypeSlots500 | ApiError>>(
+ eventTypeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventTypeSlots>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetEventTypeSlots<TData = Awaited<ReturnType<typeof getEventTypeSlots>>, TError = ErrorType<GetEventTypeSlots404 | GetEventTypeSlots422 | GetEventTypeSlots500 | ApiError>>(
+ eventTypeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEventTypeSlots>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetEventTypeSlotsQueryOptions(eventTypeId,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

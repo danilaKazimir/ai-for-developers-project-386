@@ -225,7 +225,12 @@ async def test_catalog_survives_application_restart(
 
 
 @pytest.mark.parametrize(
-    "method,path", [("GET", "/api/event-types"), ("POST", "/api/organizer/event-types")]
+    "method,path",
+    [
+        ("GET", "/api/event-types"),
+        ("POST", "/api/organizer/event-types"),
+        ("GET", "/api/event-types/intro/slots"),
+    ],
 )
 async def test_database_unavailable_has_no_connection_details(
     test_database_url: str, method: str, path: str

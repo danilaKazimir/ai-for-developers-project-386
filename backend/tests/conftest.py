@@ -38,9 +38,19 @@ async def postgres_app(
     engine = create_async_engine(test_database_url)
     async with engine.begin() as connection:
         await connection.execute(text("DELETE FROM event_types"))
+        await connection.execute(
+            text("UPDATE calendars SET timezone = 'Europe/Moscow' WHERE id = 1")
+        )
     await engine.dispose()
     app = create_app(
         Settings(database_url=test_database_url, organizer_access_token="test-organizer-key")
     )
     async with app.router.lifespan_context(app):
-        yield app
+        try:
+            yield app
+        finally:
+            async with app.state.session_factory() as session:
+                await session.execute(
+                    text("UPDATE calendars SET timezone = 'Europe/Moscow' WHERE id = 1")
+                )
+                await session.commit()
