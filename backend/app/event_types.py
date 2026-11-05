@@ -1,10 +1,8 @@
 from datetime import datetime, timedelta
-from hmac import compare_digest
 from typing import Annotated, Any
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Request
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import ConfigDict, field_validator
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -21,27 +19,6 @@ from backend.app.models import BookingRecord, Calendar, EventTypeRecord
 from backend.app.scheduling import get_now, schedule_days
 
 router = APIRouter()
-bearer = HTTPBearer(auto_error=False)
-
-
-async def require_organizer(
-    request: Request,
-    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
-) -> None:
-    expected = request.app.state.settings.organizer_access_token
-    if (
-        not expected
-        or credentials is None
-        or not compare_digest(credentials.credentials.encode(), expected.encode())
-    ):
-        raise HTTPException(
-            status_code=401,
-            detail={
-                "code": "ORGANIZER_ACCESS_DENIED",
-                "message": "Введите корректный ключ управления.",
-            },
-            headers={"WWW-Authenticate": "Bearer"},
-        )
 
 
 class EventTypeInput(CreateEventTypeRequest):
@@ -66,7 +43,6 @@ def event_type_response(record: EventTypeRecord) -> EventType:
     "/api/organizer/event-types",
     status_code=201,
     response_model=EventType,
-    dependencies=[Depends(require_organizer)],
     operation_id="createEventType",
 )
 async def create_event_type(

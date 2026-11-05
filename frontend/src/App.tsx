@@ -210,8 +210,8 @@ export function App() {
       <title>{title}</title>
       <a className="skip-link" href="#main-content">Перейти к содержимому</a>
       <header className="site-header container">
-        <Brand />
-        <nav aria-label="Основная навигация"><a className="catalog-link" href="/organizer/bookings">Предстоящие встречи</a><a className="catalog-link" href="/event-types">Каталог</a>{isHomePage && <a className="how-link" href="#how-it-works">Как это работает</a>}{!isCreatePage && <CreateCalendarLink className="header-button" />}</nav>
+        {eventTypeId ? <span className="brand"><span className="brand-mark"><Icon name="calendar" /></span><span>Календарь звонков</span></span> : <Brand />}
+        {!eventTypeId && <nav aria-label="Основная навигация"><a className="catalog-link" href="/organizer/bookings">Предстоящие встречи</a><a className="catalog-link" href="/event-types">Каталог</a>{isHomePage && <a className="how-link" href="#how-it-works">Как это работает</a>}{!isCreatePage && <CreateCalendarLink className="header-button" />}</nav>}
       </header>
       {isHomePage ? <LandingPage /> : isCreatePage ? <CreateEventType /> : isBookingsPage ? <OrganizerBookings /> : isCatalogPage ? <EventTypeCatalog /> : eventTypeId ? <SlotCalendar key={eventTypeId} eventTypeId={eventTypeId} /> : <MessagePage content={messagePage} />}
       <footer className="site-footer container"><span>Календарь звонков</span><p>Больше времени на разговор.</p></footer>

@@ -150,7 +150,7 @@ class EventTypeSlots(BaseModel):
 
 class OrganizerBooking(BookingConfirmation):
     """
-    Guest contacts are available only to the organizer.
+    Upcoming bookings with guest contacts, available in the public demo.
     """
 
     model_config = ConfigDict(

@@ -57,7 +57,6 @@ async def add_type(client: AsyncClient, id: str, duration: int) -> None:
             "description": "",
             "durationMinutes": duration,
         },
-        headers={"Authorization": "Bearer test-organizer-key"},
     )
     assert response.status_code == 201
 
@@ -308,7 +307,6 @@ async def test_concurrent_bookings_use_independent_waiting_connections(
     ) as client:
         stored = await client.get(
             "/api/organizer/bookings",
-            headers={"Authorization": "Bearer test-organizer-key"},
         )
         assert_contract_response(stored)
         assert {item["id"] for item in stored.json()["items"]} == {

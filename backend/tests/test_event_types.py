@@ -7,10 +7,7 @@ from backend.tests.contract import assert_contract_response
 pytestmark = pytest.mark.integration
 
 
-async def test_created_event_type_is_in_public_catalog(
-    postgres_app: FastAPI, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setenv("ORGANIZER_ACCESS_TOKEN", "test-organizer-key")
+async def test_created_event_type_is_in_public_catalog(postgres_app: FastAPI) -> None:
     body = {
         "id": "discovery",
         "name": "  Знакомство  ",
@@ -23,7 +20,6 @@ async def test_created_event_type_is_in_public_catalog(
         created = await client.post(
             "/api/organizer/event-types",
             json=body,
-            headers={"Authorization": "Bearer test-organizer-key"},
         )
         assert created.status_code == 201
         assert created.json() == {**body, "name": "Знакомство"}
@@ -49,7 +45,6 @@ async def test_duplicate_id_does_not_replace_event_and_catalog_is_sorted(
                     "description": "",
                     "durationMinutes": 30,
                 },
-                headers={"Authorization": "Bearer test-organizer-key"},
             )
             assert created.status_code == 201
             assert_contract_response(created)
@@ -61,7 +56,6 @@ async def test_duplicate_id_does_not_replace_event_and_catalog_is_sorted(
                 "description": "",
                 "durationMinutes": 60,
             },
-            headers={"Authorization": "Bearer test-organizer-key"},
         )
         assert duplicate.status_code == 409
         assert duplicate.json()["code"] == "EVENT_TYPE_ID_TAKEN"
@@ -74,34 +68,6 @@ async def test_duplicate_id_does_not_replace_event_and_catalog_is_sorted(
             ]
         }
         assert_contract_response(catalog)
-
-
-@pytest.mark.parametrize(
-    "authorization", [None, "Bearer wrong", "Basic test-organizer-key", "Bearer", "Bearer неверный"]
-)
-async def test_create_requires_organizer_access(
-    postgres_app: FastAPI, authorization: str | None
-) -> None:
-    headers = {"Authorization": authorization} if authorization else {}
-    # HTTP headers are byte sequences; use UTF-8 explicitly for malformed Unicode credentials.
-    request_headers = {name.encode(): value.encode() for name, value in headers.items()}
-    async with AsyncClient(
-        transport=ASGITransport(app=postgres_app), base_url="http://test"
-    ) as client:
-        response = await client.post(
-            "/api/organizer/event-types",
-            json={
-                "id": "intro",
-                "name": "Intro",
-                "description": "",
-                "durationMinutes": 30,
-            },
-            headers=request_headers,
-        )
-        assert response.status_code == 401
-        assert response.json()["code"] == "ORGANIZER_ACCESS_DENIED"
-        assert_contract_response(response)
-        assert (await client.get("/api/event-types")).json() == {"items": []}
 
 
 @pytest.mark.parametrize(
@@ -141,7 +107,6 @@ async def test_invalid_event_type_is_not_created(
                 "durationMinutes": 30,
                 field: value,
             },
-            headers={"Authorization": "Bearer test-organizer-key"},
         )
         assert response.status_code == 422
         assert response.json()["code"] == "VALIDATION_ERROR"
@@ -164,33 +129,9 @@ async def test_event_type_accepts_limits_after_trimming_name(
                 "description": "d" * 2000,
                 "durationMinutes": duration,
             },
-            headers={"Authorization": "Bearer test-organizer-key"},
         )
         assert response.status_code == 201
         assert response.json()["name"] == "n" * 120
-        assert_contract_response(response)
-
-
-async def test_missing_server_key_fails_closed(test_database_url: str) -> None:
-    from backend.app.config import Settings
-    from backend.app.main import create_app
-
-    app = create_app(Settings(database_url=test_database_url, organizer_access_token=None))
-    async with (
-        app.router.lifespan_context(app),
-        AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
-    ):
-        response = await client.post(
-            "/api/organizer/event-types",
-            json={
-                "id": "intro",
-                "name": "Intro",
-                "description": "",
-                "durationMinutes": 30,
-            },
-            headers={"Authorization": "Bearer test-organizer-key"},
-        )
-        assert response.status_code == 401
         assert_contract_response(response)
 
 
@@ -211,7 +152,6 @@ async def test_catalog_survives_application_restart(
                 "description": "",
                 "durationMinutes": 30,
             },
-            headers={"Authorization": "Bearer test-organizer-key"},
         )
         assert created.status_code == 201
     restarted = create_app(Settings(database_url=test_database_url))
@@ -241,9 +181,7 @@ async def test_database_unavailable_has_no_connection_details(
     from backend.app.main import create_app
 
     unavailable = make_url(test_database_url).set(port=1).render_as_string(hide_password=False)
-    app = create_app(
-        Settings(database_url=unavailable, organizer_access_token="test-organizer-key")
-    )
+    app = create_app(Settings(database_url=unavailable))
     async with (
         app.router.lifespan_context(app),
         AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
@@ -259,7 +197,6 @@ async def test_database_unavailable_has_no_connection_details(
             }
             if method == "POST"
             else None,
-            headers={"Authorization": "Bearer test-organizer-key"},
         )
         assert response.status_code == 503
         assert response.json()["code"] == "DATABASE_UNAVAILABLE"

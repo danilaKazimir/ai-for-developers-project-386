@@ -58,10 +58,6 @@ model EventTypeCatalog {
   items: EventType[];
 }
 
-@error model AccessDeniedError {
-  @statusCode statusCode: 401;
-  @body body: { code: "ORGANIZER_ACCESS_DENIED"; message: string; };
-}
 @error model EventTypeConflictError {
   @statusCode statusCode: 409;
   @body body: { code: "EVENT_TYPE_ID_TAKEN"; message: string; };
@@ -77,12 +73,11 @@ model EventTypeCatalog {
 
 @route("/api/organizer/event-types")
 @post
-@useAuth(BearerAuth)
 @operationId("createEventType")
 op createEventType(@body eventType: CreateEventTypeRequest): {
   @statusCode statusCode: 201;
   @body body: EventType;
-} | AccessDeniedError | EventTypeConflictError | ValidationError | ServiceUnavailableError | InternalError;
+} | EventTypeConflictError | ValidationError | ServiceUnavailableError | InternalError;
 
 @route("/api/event-types")
 @get
@@ -160,7 +155,7 @@ op createBooking(@body booking: CreateBookingRequest): {
   @body body: BookingConfirmation;
 } | EventTypeNotFoundError | TimeConflictError | BookingValidationError | ServiceUnavailableError | InternalError;
 
-/** Guest contacts are available only to the organizer. */
+/** Upcoming bookings with guest contacts, available in the public demo. */
 model OrganizerBooking extends BookingConfirmation {
   guest: BookingGuest;
 }
@@ -171,9 +166,8 @@ model OrganizerBookings {
 /** All bookings starting at or after now, ordered by start then UUID, without a window limit. */
 @route("/api/organizer/bookings")
 @get
-@useAuth(BearerAuth)
 @operationId("listOrganizerBookings")
 op listOrganizerBookings(): {
   @header("Cache-Control") cacheControl: "private, no-store";
   @body body: OrganizerBookings;
-} | AccessDeniedError | ServiceUnavailableError | InternalError;
+} | ServiceUnavailableError | InternalError;

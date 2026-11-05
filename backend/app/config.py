@@ -8,7 +8,6 @@ from sqlalchemy.engine import make_url
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    organizer_access_token: str | None = None
     database_url: str
 
     @model_validator(mode="after")

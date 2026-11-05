@@ -4,7 +4,7 @@ const database = process.env.TEST_DATABASE_URL;
 if (!database || !new URL(database).pathname.endsWith('_test') || database === process.env.DATABASE_URL) {
   throw new Error('Use a dedicated TEST_DATABASE_URL ending in _test, different from DATABASE_URL.');
 }
-const env = { ...process.env, DATABASE_URL: database, ORGANIZER_ACCESS_TOKEN: 'playwright-only-key' };
+const env = { ...process.env, DATABASE_URL: database };
 execFileSync('uv', ['run', '--frozen', 'alembic', 'upgrade', 'head'], { env, stdio: 'inherit' });
 // Every full-stack profile starts from empty data in its dedicated test database.
 execFileSync('uv', ['run', '--frozen', 'python', '-c', `

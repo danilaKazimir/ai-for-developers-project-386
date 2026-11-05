@@ -27,8 +27,7 @@ test('организатор может пройти основной сцена
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL('/calendars/new');
 
-  await page.getByLabel('Ключ управления').focus();
-  await page.keyboard.press('Tab');
+  await page.getByLabel('Id типа события').focus();
   await expect(page.getByLabel('Id типа события')).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.getByLabel('Название', { exact: true })).toBeFocused();

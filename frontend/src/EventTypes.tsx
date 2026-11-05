@@ -2,7 +2,6 @@ import { useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getListEventTypesQueryKey, useCreateEventType, useListEventTypes } from './api/generated/calendar';
 import { ApiHttpError } from './api/http';
-import { useOrganizerAccess } from './organizer-access';
 
 export function EventTypeCatalog() {
   const catalog = useListEventTypes();
@@ -31,7 +30,6 @@ export function EventTypeCatalog() {
 
 function creationError(error: unknown): string {
   if (error instanceof ApiHttpError) {
-    if (error.status === 401) return 'Ключ управления не подошёл. Проверьте его и повторите отправку.';
     if (error.status === 409) return 'Этот id уже занят. Выберите другой id — остальные данные сохранены.';
     if (error.status === 422) return 'Проверьте поля: id, название, описание и целую длительность от 1 до 540 минут.';
     if (error.status === 503) return 'База данных временно недоступна. Повторите попытку позже.';
@@ -40,14 +38,12 @@ function creationError(error: unknown): string {
 }
 
 export function CreateEventType() {
-  const { token, changeToken } = useOrganizerAccess();
   const [id, setId] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [duration, setDuration] = useState('30');
   const queryClient = useQueryClient();
   const creation = useCreateEventType({
-    request: { headers: { Authorization: `Bearer ${token}` } },
     mutation: {
       retry: false,
       onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getListEventTypesQueryKey() }); },
@@ -65,10 +61,6 @@ export function CreateEventType() {
       <h1>Создать тип события</h1>
       <p className="page-intro">Задайте формат встречи и получите публичную ссылку. Все типы используют один календарь: будни, 09:00–18:00, Europe/Moscow.</p>
       <form className="event-form" onSubmit={submit}>
-        <label>Ключ управления
-          <input readOnly={creation.isPending} type="password" autoComplete="off" required value={token} onChange={(event) => { creation.reset(); changeToken(event.target.value); }} aria-describedby="key-hint" />
-        </label>
-        <p id="key-hint" className="field-hint">Ключ задаётся организатором на сервере. После обновления страницы введите его заново.</p>
         <label>Id типа события
           <input readOnly={creation.isPending} required minLength={1} maxLength={64} pattern="[a-z0-9]+(-[a-z0-9]+)*" value={id} onChange={(event) => { setId(event.target.value); creation.reset(); }} aria-describedby="id-hint" />
         </label>
@@ -83,7 +75,6 @@ export function CreateEventType() {
         </label>
         {creation.isError && <p role="alert" className="form-error">{creationError(creation.error)}</p>}
         <button className="button button-primary" disabled={creation.isPending} type="submit">{creation.isPending ? 'Создаём…' : 'Создать тип события'}</button>
-        <button type="button" disabled={creation.isPending} className="text-link" onClick={() => { creation.reset(); changeToken(''); }}>Забыть ключ</button>
       </form>
       {creation.isSuccess && <section className="creation-success" role="status" aria-live="polite">
         <h2>Тип события создан</h2>

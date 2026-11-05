@@ -1,11 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-test('полный цикл двух типов и приватный общий список с выходом и обновлением', async ({ page, request, browser }) => {
+test('полный цикл двух типов и общедоступный список с обновлением', async ({ page, request, browser }) => {
   await page.setViewportSize({ width: 320, height: 844 });
   const suffix = Date.now();
   const types = [`list-long-${suffix}`, `list-short-${suffix}`];
   await page.goto('/organizer/event-types/new');
-  await page.getByLabel('Ключ управления').fill('playwright-only-key');
   for (const [index, id] of types.entries()) {
     await page.getByLabel('Id типа события').fill(id);
     await page.getByLabel('Название', { exact: true }).fill(`Формат ${index + 1} ${suffix}`);
@@ -15,7 +14,6 @@ test('полный цикл двух типов и приватный общий
   }
   await page.getByRole('link', { name: 'Предстоящие встречи', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Предстоящие встречи', exact: true })).toBeVisible();
-  await expect(page.getByLabel('Ключ управления')).toHaveValue('playwright-only-key');
   const guestContext = await browser.newContext();
   const guest = await guestContext.newPage();
   for (const [index, id] of types.entries()) {
@@ -42,66 +40,9 @@ test('полный цикл двух типов и приватный общий
     await expect(row).toContainText('Europe/Moscow');
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.getByLabel('Ключ управления').fill('wrong');
-  await page.getByRole('button', { name: 'Показать встречи' }).click();
-  await expect(page.getByRole('alert')).toContainText('Ключ управления не подошёл');
-  await expect(page.locator('body')).not.toContainText(`list-0-${suffix}@example.com`);
-  await page.getByLabel('Ключ управления').fill('playwright-only-key');
-  await page.getByRole('button', { name: 'Показать встречи' }).click();
-  await expect(page.locator('body')).toContainText(`list-0-${suffix}@example.com`);
-  await page.getByRole('button', { name: 'Забыть ключ' }).click();
-  await expect(page.getByLabel('Ключ управления')).toHaveValue('');
-  await expect(page.locator('body')).not.toContainText(`list-0-${suffix}@example.com`);
-  await page.goBack();
-  await page.goForward();
-  await expect(page.locator('body')).not.toContainText(`list-0-${suffix}@example.com`);
   await page.reload();
-  await expect(page.getByLabel('Ключ управления')).toHaveValue('');
-  expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).not.toContain('playwright-only-key');
+  await expect(page.locator('body')).toContainText(`list-0-${suffix}@example.com`);
   await guestContext.close();
-});
-
-test('приватные встречи скрыты после отказа и поздний ответ не восстанавливает их после выхода', async ({ page, request }) => {
-  const id = `private-${Date.now()}`;
-  expect((await request.post('/api/organizer/event-types', {
-    headers: { Authorization: 'Bearer playwright-only-key' },
-    data: { id, name: id, description: '', durationMinutes: 30 },
-  })).status()).toBe(201);
-  const availability = await (await request.get(`/api/event-types/${id}/slots`)).json();
-  const slot = availability.days.flatMap((day: { slots: { startsAt: string }[] }) => day.slots)[0];
-  expect((await request.post('/api/bookings', { data: { eventTypeId: id, startsAt: slot.startsAt, guest: { name: 'Приватный гость', email: `${id}@example.com` } } })).status()).toBe(201);
-  await page.goto('/organizer/bookings');
-  await page.getByLabel('Ключ управления').fill('playwright-only-key');
-  await page.getByRole('button', { name: 'Показать встречи' }).click();
-  await expect(page.locator('body')).toContainText(`${id}@example.com`);
-  await page.route('**/api/organizer/bookings', async (route) => {
-    const denied = await route.fetch({ headers: { Authorization: 'Bearer wrong' } });
-    await route.fulfill({ response: denied });
-  });
-  await page.getByRole('button', { name: 'Обновить встречи' }).click();
-  await expect(page.getByRole('alert')).toContainText('Ключ управления не подошёл');
-  await expect(page.locator('body')).not.toContainText(`${id}@example.com`);
-  await page.unroute('**/api/organizer/bookings');
-  let release!: () => void;
-  const gate = new Promise<void>((resolve) => { release = resolve; });
-  let captured!: () => void;
-  const started = new Promise<void>((resolve) => { captured = resolve; });
-  await page.route('**/api/organizer/bookings', async (route) => {
-    const response = await route.fetch();
-    captured();
-    await gate;
-    await route.fulfill({ response });
-  });
-  await page.getByRole('button', { name: 'Повторить загрузку' }).click();
-  await started;
-  await expect(page.getByRole('status')).toContainText('Загружаем встречи');
-  await page.getByRole('button', { name: 'Забыть ключ' }).click();
-  release();
-  await expect(page.getByLabel('Ключ управления')).toHaveValue('');
-  await page.getByRole('link', { name: 'Создать тип события', exact: false }).click();
-  await page.getByRole('link', { name: 'Предстоящие встречи', exact: true }).click();
-  await expect(page.locator('body')).not.toContainText(`${id}@example.com`);
-  await expect(page.getByLabel('Ключ управления')).toHaveValue('');
 });
 
 test('пустой список, ошибка загрузки и неоднозначное локальное время', async ({ page }) => {
@@ -115,8 +56,6 @@ test('пустой список, ошибка загрузки и неодноз
     ] } });
   });
   await page.goto('/organizer/bookings');
-  await page.getByLabel('Ключ управления').fill('test-key');
-  await page.getByRole('button', { name: 'Показать встречи' }).click();
   await expect(page.locator('body')).toContainText('Предстоящих встреч пока нет');
   state = 'error';
   await page.getByRole('button', { name: 'Обновить встречи' }).click();

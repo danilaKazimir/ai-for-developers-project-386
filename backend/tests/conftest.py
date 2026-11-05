@@ -49,7 +49,6 @@ async def postgres_app(
             database_url=make_url(test_database_url)
             .update_query_dict({"application_name": f"booking-test-{uuid4()}"})
             .render_as_string(hide_password=False),
-            organizer_access_token="test-organizer-key",
         )
     )
     async with app.router.lifespan_context(app):

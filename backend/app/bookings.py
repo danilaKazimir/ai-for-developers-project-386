@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db import get_session
-from backend.app.event_types import event_type_response, require_organizer
+from backend.app.event_types import event_type_response
 from backend.app.generated.models import (
     BookingConfirmation,
     BookingGuest,
@@ -155,7 +155,6 @@ async def create_booking(
 @router.get(
     "/api/organizer/bookings",
     response_model=OrganizerBookings,
-    dependencies=[Depends(require_organizer)],
     operation_id="listOrganizerBookings",
 )
 async def list_organizer_bookings(

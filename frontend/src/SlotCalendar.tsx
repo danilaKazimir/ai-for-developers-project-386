@@ -112,7 +112,6 @@ export function SlotCalendar({ eventTypeId }: { eventTypeId: string }) {
   const selected = activeDay?.slots.find((slot) => slot.startsAt === start);
   return (
     <main className="workspace container" id="main-content" tabIndex={-1}>
-      <a className="text-link" href="/event-types">← Все типы событий</a>
       {calendar.isPending && <p role="status">Загружаем календарь…</p>}
       {calendar.isError && <div role="alert">
         <h1>{calendar.error instanceof ApiHttpError && calendar.error.status === 404 ? 'Тип события не найден' : 'Не удалось загрузить календарь'}</h1>

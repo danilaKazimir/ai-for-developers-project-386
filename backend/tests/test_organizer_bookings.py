@@ -8,7 +8,6 @@ from backend.tests.contract import assert_contract_response
 from backend.tests.test_bookings import add_type, booking_payload
 
 pytestmark = pytest.mark.integration
-AUTH = {"Authorization": "Bearer test-organizer-key"}
 
 
 async def test_organizer_reads_saved_contacts_across_types_without_a_window_limit(
@@ -18,7 +17,7 @@ async def test_organizer_reads_saved_contacts_across_types_without_a_window_limi
     async with AsyncClient(
         transport=ASGITransport(app=postgres_app), base_url="http://test"
     ) as client:
-        empty = await client.get("/api/organizer/bookings", headers=AUTH)
+        empty = await client.get("/api/organizer/bookings")
         assert empty.status_code == 200
         assert empty.json() == {"items": []}
         assert_contract_response(empty)
@@ -41,7 +40,7 @@ async def test_organizer_reads_saved_contacts_across_types_without_a_window_limi
             saved.append(response.json())
         # A list has no availability-window bound, even after the clock moves back.
         postgres_app.state.clock = lambda: datetime.fromisoformat("2026-10-01T00:00:00+00:00")
-        all_meetings = await client.get("/api/organizer/bookings", headers=AUTH)
+        all_meetings = await client.get("/api/organizer/bookings")
         assert_contract_response(all_meetings)
         assert [item["id"] for item in all_meetings.json()["items"]] == [
             saved[1]["id"],
@@ -50,7 +49,7 @@ async def test_organizer_reads_saved_contacts_across_types_without_a_window_limi
         ]
         # Exactly now is upcoming; an ongoing meeting is excluded.
         postgres_app.state.clock = lambda: datetime.fromisoformat("2026-11-04T08:00:00+00:00")
-        upcoming = await client.get("/api/organizer/bookings", headers=AUTH)
+        upcoming = await client.get("/api/organizer/bookings")
         assert_contract_response(upcoming)
         items = upcoming.json()["items"]
         assert [item["id"] for item in items] == [saved[2]["id"], saved[0]["id"]]
@@ -59,23 +58,10 @@ async def test_organizer_reads_saved_contacts_across_types_without_a_window_limi
             "guest": {"name": "Гость", "email": "private@example.com", "comment": "Секрет"},
         }
         postgres_app.state.clock = lambda: datetime.fromisoformat("2026-11-04T07:30:00+00:00")
-        ongoing = await client.get("/api/organizer/bookings", headers=AUTH)
+        ongoing = await client.get("/api/organizer/bookings")
         assert_contract_response(ongoing)
         assert [item["id"] for item in ongoing.json()["items"]] == [saved[2]["id"], saved[0]["id"]]
         assert upcoming.headers["cache-control"] == "private, no-store"
-        for authorization in (None, "Bearer wrong", "Basic test-organizer-key"):
-            denied = await client.get(
-                "/api/organizer/bookings",
-                headers={"Authorization": authorization} if authorization else {},
-            )
-            assert denied.status_code == 401
-            assert_contract_response(denied)
-            assert "private@example.com" not in denied.text
-            assert denied.headers["cache-control"] == "private, no-store"
-        postgres_app.state.settings.organizer_access_token = ""
-        denied = await client.get("/api/organizer/bookings", headers=AUTH)
-        assert denied.status_code == 401
-        assert_contract_response(denied)
 
 
 async def test_organizer_list_database_error_is_private_and_matches_contract(
@@ -91,14 +77,13 @@ async def test_organizer_list_database_error_is_private_and_matches_contract(
             database_url=make_url(test_database_url)
             .set(port=1)
             .render_as_string(hide_password=False),
-            organizer_access_token="test-organizer-key",
         )
     )
     async with (
         app.router.lifespan_context(app),
         AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
     ):
-        response = await client.get("/api/organizer/bookings", headers=AUTH)
+        response = await client.get("/api/organizer/bookings")
         assert response.status_code == 503
         assert response.headers["cache-control"] == "private, no-store"
         assert_contract_response(response)
@@ -114,7 +99,7 @@ async def test_organizer_unexpected_error_is_private(postgres_app: FastAPI) -> N
         transport=ASGITransport(app=postgres_app, raise_app_exceptions=False),
         base_url="http://test",
     ) as client:
-        response = await client.get("/api/organizer/bookings", headers=AUTH)
+        response = await client.get("/api/organizer/bookings")
         assert response.status_code == 500
         assert_contract_response(response)
         assert "private infrastructure detail" not in response.text

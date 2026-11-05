@@ -251,24 +251,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrganizerBookings'
-        '401':
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code:
-                    type: string
-                    enum:
-                      - ORGANIZER_ACCESS_DENIED
-                  message:
-                    type: string
-                required:
-                  - code
-                  - message
-                unevaluatedProperties:
-                  not: {}
         '500':
           description: Server error
           content:
@@ -293,8 +275,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
-      security:
-        - BearerAuth: []
   /api/organizer/event-types:
     post:
       operationId: createEventType
@@ -306,24 +286,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EventType'
-        '401':
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code:
-                    type: string
-                    enum:
-                      - ORGANIZER_ACCESS_DENIED
-                  message:
-                    type: string
-                required:
-                  - code
-                  - message
-                unevaluatedProperties:
-                  not: {}
         '409':
           description: The request conflicts with the current state of the server.
           content:
@@ -390,8 +352,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateEventTypeRequest'
-      security:
-        - BearerAuth: []
 components:
   schemas:
     ApiError:
@@ -589,7 +549,7 @@ components:
         not: {}
       allOf:
         - $ref: '#/components/schemas/BookingConfirmation'
-      description: Guest contacts are available only to the organizer.
+      description: Upcoming bookings with guest contacts, available in the public demo.
     OrganizerBookings:
       type: object
       required:
@@ -631,7 +591,3 @@ components:
             $ref: '#/components/schemas/Slot'
       unevaluatedProperties:
         not: {}
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: Bearer

@@ -7,7 +7,6 @@ test('имя гостя из 120 символов сохраняется цел�
   const id = `padded-name-${Date.now()}`;
   const name = `${'И'.repeat(119)}я`;
   expect((await request.post('/api/organizer/event-types', {
-    headers: { Authorization: 'Bearer playwright-only-key' },
     data: { id, name: id, description: '', durationMinutes: 30 },
   })).status()).toBe(201);
   const calendar = await (await request.get(`/api/event-types/${id}/slots`)).json();
@@ -19,10 +18,9 @@ test('имя гостя из 120 символов сохраняется цел�
   await page.getByLabel('Email').fill('padded-name@example.com');
   await page.getByRole('button', { name: 'Подтвердить запись' }).click();
   await expect(page.getByRole('heading', { name: 'Встреча подтверждена' })).toBeVisible();
+  await expect(page.locator('a[href]:not([href="#main-content"])')).toHaveCount(0);
 
-  const response = await request.get('/api/organizer/bookings', {
-    headers: { Authorization: 'Bearer playwright-only-key' },
-  });
+  const response = await request.get('/api/organizer/bookings');
   expect(response.status()).toBe(200);
   const bookings: OrganizerBookings = await response.json();
   const saved = bookings.items.filter((booking) => booking.eventType.id === id);
@@ -34,7 +32,6 @@ for (const conflict of [false, true]) {
   test(conflict ? 'занятый после выбора слот даёт конфликт и сохраняет контакты для повторной записи' : 'гость проходит из каталога к подтверждённой встрече', async ({ page, request }) => {
     const id = `booking-${Date.now()}`;
     expect((await request.post('/api/organizer/event-types', {
-      headers: { Authorization: 'Bearer playwright-only-key' },
       data: { id, name: `Встреча ${id}`, description: 'Обсудим проект', durationMinutes: 30 },
     })).status()).toBe(201);
     const calendar = await (await request.get(`/api/event-types/${id}/slots`)).json();
@@ -68,6 +65,7 @@ for (const conflict of [false, true]) {
       await page.getByRole('button', { name: 'Подтвердить запись' }).click();
     }
     await expect(page.getByRole('heading', { name: 'Встреча подтверждена' })).toBeVisible();
+    await expect(page.locator('a[href]:not([href="#main-content"])')).toHaveCount(0);
     await expect(page.getByRole('status')).toContainText(`Встреча ${id}`);
     await expect(page.getByRole('status')).toContainText('Europe/Moscow');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

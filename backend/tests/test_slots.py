@@ -18,7 +18,6 @@ async def create_type(client: AsyncClient, duration: int = 30) -> None:
             "description": "Обсудим задачу",
             "durationMinutes": duration,
         },
-        headers={"Authorization": "Bearer test-organizer-key"},
     )
     assert response.status_code == 201
 

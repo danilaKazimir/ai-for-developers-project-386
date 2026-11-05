@@ -8,7 +8,7 @@ import type { BookingConfirmation } from './bookingConfirmation';
 import type { BookingGuest } from './bookingGuest';
 
 /**
- * Guest contacts are available only to the organizer.
+ * Upcoming bookings with guest contacts, available in the public demo.
  */
 export type OrganizerBooking = BookingConfirmation & {
   guest: BookingGuest;

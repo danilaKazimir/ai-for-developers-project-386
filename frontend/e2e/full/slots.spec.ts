@@ -5,7 +5,6 @@ test.use({ timezoneId: 'America/Los_Angeles' });
 test('гость из каталога выбирает дату и время с клавиатуры, прямая ссылка работает', async ({ page, request }) => {
   const id = `slots-${Date.now()}`;
   const created = await request.post('/api/organizer/event-types', {
-    headers: { Authorization: 'Bearer playwright-only-key' },
     data: { id, name: 'Обсуждение проекта', description: 'Встреча для знакомства', durationMinutes: 45 },
   });
   expect(created.status()).toBe(201);
@@ -73,7 +72,7 @@ test('окно перечитывается в московскую полноч
 test('неизвестная прямая ссылка показывает понятную ошибку', async ({ page }) => {
   await page.goto('/event-types/no-such-type');
   await expect(page.getByRole('heading', { name: 'Тип события не найден' })).toBeVisible();
-  await expect(page.getByRole('link', { name: '← Все типы событий' })).toBeVisible();
+  await expect(page.locator('a[href]:not([href="#main-content"])')).toHaveCount(0);
 });
 
 test('ошибка загрузки позволяет повторить запрос', async ({ page }) => {
