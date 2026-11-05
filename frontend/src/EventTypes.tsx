@@ -58,7 +58,7 @@ export function CreateEventType() {
   return (
     <main className="workspace container" id="main-content" tabIndex={-1}>
       <p className="eyebrow">Управление общим календарём</p>
-      <h1>Создать тип события</h1>
+      <h1>Создать событие</h1>
       <p className="page-intro">Задайте формат встречи и получите публичную ссылку. Все типы используют один календарь: будни, 09:00–18:00, Europe/Moscow.</p>
       <form className="event-form" onSubmit={submit}>
         <label>Id типа события
@@ -74,7 +74,7 @@ export function CreateEventType() {
           <input readOnly={creation.isPending} type="number" required min={1} max={540} step={1} value={duration} onChange={(event) => setDuration(event.target.value)} />
         </label>
         {creation.isError && <p role="alert" className="form-error">{creationError(creation.error)}</p>}
-        <button className="button button-primary" disabled={creation.isPending} type="submit">{creation.isPending ? 'Создаём…' : 'Создать тип события'}</button>
+        <button className="button button-primary" disabled={creation.isPending} type="submit">{creation.isPending ? 'Создаём…' : 'Создать событие'}</button>
       </form>
       {creation.isSuccess && <section className="creation-success" role="status" aria-live="polite">
         <h2>Тип события создан</h2>

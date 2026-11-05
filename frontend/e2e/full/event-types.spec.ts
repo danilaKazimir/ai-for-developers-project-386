@@ -8,7 +8,7 @@ test('создание двух типов и публичный каталог'
     await page.getByLabel('Название', { exact: true }).fill(name);
     await page.getByLabel('Описание', { exact: true }).fill('Обсудим вашу задачу');
     await page.getByLabel('Длительность, минут').fill(duration);
-    await page.getByRole('button', { name: 'Создать тип события', exact: true }).click();
+    await page.getByRole('button', { name: 'Создать событие', exact: true }).click();
     await expect(page.getByRole('status')).toContainText('Тип события создан');
     await expect(page.getByRole('link', { name: 'Публичная ссылка на тип' })).toHaveAttribute('href', `/event-types/${id}`);
   }
@@ -33,12 +33,12 @@ test('повторный id сохраняет введённые поля', asy
   await page.getByLabel('Id типа события').fill(id);
   await page.getByLabel('Название', { exact: true }).fill('Новое название');
   await page.getByLabel('Описание', { exact: true }).fill('Сохранить описание');
-  await page.getByRole('button', { name: 'Создать тип события', exact: true }).click();
+  await page.getByRole('button', { name: 'Создать событие', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('Этот id уже занят');
   await expect(page.getByLabel('Название', { exact: true })).toHaveValue('Новое название');
   await expect(page.getByLabel('Описание', { exact: true })).toHaveValue('Сохранить описание');
   await page.getByLabel('Id типа события').fill(`${id}-new`);
-  await page.getByRole('button', { name: 'Создать тип события', exact: true }).click();
+  await page.getByRole('button', { name: 'Создать событие', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Тип события создан');
 });
 
@@ -56,7 +56,7 @@ test('форма доступна с клавиатуры на мобильно�
   await page.keyboard.press('ControlOrMeta+A');
   await page.keyboard.type('45');
   await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'Создать тип события', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Создать событие', exact: true })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('status')).toContainText('Тип события создан');
   const widths = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]);
@@ -67,6 +67,6 @@ test('граница названия применяется после удал
   await page.goto('/calendars/new');
   await page.getByLabel('Id типа события').fill(`name-limit-${Date.now()}`);
   await page.getByLabel('Название', { exact: true }).fill(`  ${'n'.repeat(120)}  `);
-  await page.getByRole('button', { name: 'Создать тип события', exact: true }).click();
+  await page.getByRole('button', { name: 'Создать событие', exact: true }).click();
   await expect(page.getByRole('status')).toContainText(`${'n'.repeat(120)} · 30 минут`);
 });

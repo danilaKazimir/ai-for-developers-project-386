@@ -9,7 +9,7 @@ test('полный цикл двух типов и общедоступный с
     await page.getByLabel('Id типа события').fill(id);
     await page.getByLabel('Название', { exact: true }).fill(`Формат ${index + 1} ${suffix}`);
     await page.getByLabel('Длительность, минут').fill(index === 0 ? '60' : '30');
-    await page.getByRole('button', { name: 'Создать тип события', exact: true }).click();
+    await page.getByRole('button', { name: 'Создать событие', exact: true }).click();
     await expect(page.getByRole('status')).toContainText('Тип события создан');
   }
   await page.getByRole('link', { name: 'Предстоящие встречи', exact: true }).click();

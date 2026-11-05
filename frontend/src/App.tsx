@@ -34,7 +34,7 @@ function Brand() {
 function CreateCalendarLink({ className = '' }: { className?: string }) {
   return (
     <a className={`button button-primary ${className}`} href={createCalendarPath}>
-      Создать тип события <Icon name="arrow" />
+      Создать событие <Icon name="arrow" />
     </a>
   );
 }
@@ -203,7 +203,7 @@ export function App() {
   const isCatalogPage = pathname === '/event-types';
   const eventTypeId = /^\/event-types\/([^/]+)$/.exec(pathname)?.[1];
   const messagePage = messagePages.notFound;
-  const title = isHomePage ? 'Календарь звонков — встречи без лишней переписки' : isCreatePage ? 'Создать тип события — Календарь звонков' : isBookingsPage ? 'Предстоящие встречи — Календарь звонков' : isCatalogPage ? 'Типы событий — Календарь звонков' : eventTypeId ? 'Выбрать время — Календарь звонков' : messagePage.title;
+  const title = isHomePage ? 'Календарь звонков — встречи без лишней переписки' : isCreatePage ? 'Создать событие — Календарь звонков' : isBookingsPage ? 'Предстоящие встречи — Календарь звонков' : isCatalogPage ? 'Типы событий — Календарь звонков' : eventTypeId ? 'Выбрать время — Календарь звонков' : messagePage.title;
 
   return (
     <div className="app" onClick={navigate}>
