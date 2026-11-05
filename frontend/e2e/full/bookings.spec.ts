@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { copyGuestLink } from './guest-links';
 import type { OrganizerBookings } from '../../src/api/generated/models';
 
 test.use({ timezoneId: 'America/Los_Angeles' });
@@ -29,7 +30,7 @@ test('имя гостя из 120 символов сохраняется цел�
 });
 
 for (const conflict of [false, true]) {
-  test(conflict ? 'занятый после выбора слот даёт конфликт и сохраняет контакты для повторной записи' : 'гость проходит из каталога к подтверждённой встрече', async ({ page, request }) => {
+  test(conflict ? 'занятый после выбора слот даёт конфликт и сохраняет контакты для повторной записи' : 'гость по скопированной ссылке получает подтверждение встречи', async ({ page, request }) => {
     const id = `booking-${Date.now()}`;
     expect((await request.post('/api/organizer/event-types', {
       data: { id, name: `Встреча ${id}`, description: 'Обсудим проект', durationMinutes: 30 },
@@ -39,7 +40,8 @@ for (const conflict of [false, true]) {
     const selected = day.slots[0];
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/event-types');
-    await page.getByRole('article').filter({ hasText: id }).getByRole('link').click();
+    const guestUrl = await copyGuestLink(page, id, page.getByRole('article').filter({ hasText: id }));
+    await page.goto(guestUrl);
     await page.getByRole('button', { name: day.date, exact: true }).click();
     await page.getByRole('group', { name: 'Свободное время' }).getByRole('button').first().click();
     await page.getByLabel('Ваше имя').fill('Анна');

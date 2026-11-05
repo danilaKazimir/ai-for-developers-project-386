@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { copyGuestLink } from './guest-links';
 
 test('создание двух типов и публичный каталог', async ({ page }) => {
   const suffix = Date.now().toString();
@@ -10,7 +11,7 @@ test('создание двух типов и публичный каталог'
     await page.getByLabel('Длительность, минут').fill(duration);
     await page.getByRole('button', { name: 'Создать событие', exact: true }).click();
     await expect(page.getByRole('status')).toContainText('Тип события создан');
-    await expect(page.getByRole('link', { name: 'Публичная ссылка на тип' })).toHaveAttribute('href', `/event-types/${id}`);
+    await copyGuestLink(page, id);
   }
   await page.reload();
   await page.getByRole('link', { name: 'Каталог', exact: true }).click();
@@ -70,3 +71,31 @@ test('граница названия применяется после удал
   await page.getByRole('button', { name: 'Создать событие', exact: true }).click();
   await expect(page.getByRole('status')).toContainText(`${'n'.repeat(120)} · 30 минут`);
 });
+
+for (const unavailable of [false, true]) {
+  test(`ручное копирование ссылки: ${unavailable ? 'API отсутствует' : 'доступ отклонён'}`, async ({ page, request }) => {
+    const id = `manual-link-${Date.now()}`;
+    expect((await request.post('/api/organizer/event-types', { data: { id, name: id, description: '', durationMinutes: 30 } })).status()).toBe(201);
+    await page.addInitScript((missing) => {
+      Object.defineProperty(navigator, 'clipboard', { configurable: true, value: missing ? undefined : { writeText: () => Promise.reject(new Error('Denied')) } });
+    }, unavailable);
+    await page.setViewportSize({ width: 320, height: 844 });
+    await page.goto('/event-types');
+    const card = page.getByRole('article').filter({ hasText: id });
+    await card.getByRole('button', { name: 'Скопировать ссылку' }).click();
+    await expect(card.getByRole('alert')).toHaveText('Не удалось скопировать автоматически. Скопируйте ссылку вручную');
+    const input = card.getByLabel('Ссылка для гостя');
+    await expect(input).toHaveValue(new URL(`/event-types/${id}`, page.url()).href);
+    await input.focus();
+    expect(await input.evaluate((element: HTMLInputElement) => element.selectionEnd! - element.selectionStart!)).toBe((await input.inputValue()).length);
+    await expect(page).toHaveURL(/\/event-types$/);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.goto('/calendars/new');
+    await page.getByLabel('Id типа события').fill(`${id}-new`);
+    await page.getByLabel('Название', { exact: true }).fill('Новое событие');
+    await page.getByRole('button', { name: 'Создать событие', exact: true }).click();
+    await page.getByRole('button', { name: 'Скопировать ссылку' }).click();
+    await expect(page.getByLabel('Ссылка для гостя')).toHaveValue(new URL(`/event-types/${id}-new`, page.url()).href);
+    await expect(page).toHaveURL(/\/calendars\/new$/);
+  });
+}

@@ -1,16 +1,19 @@
 import { expect, test } from '@playwright/test';
+import { copyGuestLink } from './guest-links';
 
 test('полный цикл двух типов и общедоступный список с обновлением', async ({ page, request, browser }) => {
   await page.setViewportSize({ width: 320, height: 844 });
   const suffix = Date.now();
   const types = [`list-long-${suffix}`, `list-short-${suffix}`];
   await page.goto('/organizer/event-types/new');
+  const guestUrls: string[] = [];
   for (const [index, id] of types.entries()) {
     await page.getByLabel('Id типа события').fill(id);
     await page.getByLabel('Название', { exact: true }).fill(`Формат ${index + 1} ${suffix}`);
     await page.getByLabel('Длительность, минут').fill(index === 0 ? '60' : '30');
     await page.getByRole('button', { name: 'Создать событие', exact: true }).click();
     await expect(page.getByRole('status')).toContainText('Тип события создан');
+    guestUrls.push(await copyGuestLink(page, id));
   }
   await page.getByRole('link', { name: 'Предстоящие встречи', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Предстоящие встречи', exact: true })).toBeVisible();
@@ -19,8 +22,7 @@ test('полный цикл двух типов и общедоступный с
   for (const [index, id] of types.entries()) {
     const availability = await (await request.get(`/api/event-types/${id}/slots`)).json();
     const day = availability.days.find((entry: { slots: unknown[] }) => entry.slots.length > 0);
-    await guest.goto('/event-types');
-    await guest.getByRole('article').filter({ hasText: id }).getByRole('link').click();
+    await guest.goto(guestUrls[index]);
     await guest.getByRole('button', { name: day.date, exact: true }).click();
     await guest.getByRole('group', { name: 'Свободное время' }).getByRole('button').first().click();
     await guest.getByLabel('Ваше имя').fill(`Гость ${index + 1}`);

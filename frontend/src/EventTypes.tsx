@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getListEventTypesQueryKey, useCreateEventType, useListEventTypes } from './api/generated/calendar';
 import { ApiHttpError } from './api/http';
+import { CopyGuestLink } from './CopyGuestLink';
 
 export function EventTypeCatalog() {
   const catalog = useListEventTypes();
@@ -9,7 +10,7 @@ export function EventTypeCatalog() {
     <main className="workspace container" id="main-content" tabIndex={-1}>
       <p className="eyebrow">Общий календарь организатора</p>
       <h1>Типы событий</h1>
-      <p className="page-intro">Выберите подходящий формат встречи. Время календаря — Europe/Moscow.</p>
+      <p className="page-intro">Отправьте гостю ссылку на событие — он выберет удобное время и запишется</p>
       {catalog.isPending && <p role="status">Загружаем типы событий…</p>}
       {catalog.isError && <div role="alert"><p>Не удалось загрузить каталог.</p><button className="button" onClick={() => void catalog.refetch()}>Повторить загрузку</button></div>}
       {catalog.isSuccess && (catalog.data.items.length === 0
@@ -20,7 +21,7 @@ export function EventTypeCatalog() {
             <h2>{type.name}</h2>
             <p className="event-description">{type.description}</p>
             <p>{type.durationMinutes} минут</p>
-            <a className="text-link" href={`/event-types/${type.id}`}>Открыть тип события →</a>
+            <CopyGuestLink eventTypeId={type.id} />
           </article>
         ))}</div>)}
       <a className="text-link" href="/">Вернуться на главную</a>
@@ -79,7 +80,7 @@ export function CreateEventType() {
       {creation.isSuccess && <section className="creation-success" role="status" aria-live="polite">
         <h2>Тип события создан</h2>
         <p>{creation.data.name} · {creation.data.durationMinutes} минут</p>
-        <a className="text-link" href={`/event-types/${creation.data.id}`}>Публичная ссылка на тип</a>
+        <CopyGuestLink key={creation.data.id} eventTypeId={creation.data.id} />
         <p className="public-url">{window.location.origin}/event-types/{creation.data.id}</p>
         <a className="text-link" href="/event-types">Открыть общий каталог</a>
       </section>}

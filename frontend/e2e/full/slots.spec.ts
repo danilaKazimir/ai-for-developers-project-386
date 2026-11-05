@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { copyGuestLink } from './guest-links';
 
 test.use({ timezoneId: 'America/Los_Angeles' });
 
-test('гость из каталога выбирает дату и время с клавиатуры, прямая ссылка работает', async ({ page, request }) => {
+test('гость по скопированной ссылке выбирает дату и время с клавиатуры', async ({ page, request }) => {
   const id = `slots-${Date.now()}`;
   const created = await request.post('/api/organizer/event-types', {
     data: { id, name: 'Обсуждение проекта', description: 'Встреча для знакомства', durationMinutes: 45 },
@@ -12,7 +13,8 @@ test('гость из каталога выбирает дату и время �
   const calendar = await response.json();
   const available = calendar.days.find((day: { slots: unknown[] }) => day.slots.length > 0);
   await page.goto('/event-types');
-  await page.getByRole('article').filter({ hasText: id }).getByRole('link').click();
+  const guestUrl = await copyGuestLink(page, id, page.getByRole('article').filter({ hasText: id }));
+  await page.goto(guestUrl);
   await expect(page.getByRole('heading', { name: 'Обсуждение проекта' })).toBeVisible();
   await expect(page.getByText('Europe/Moscow', { exact: true })).toBeVisible();
   const day = page.getByRole('button', { name: available.date, exact: true });
