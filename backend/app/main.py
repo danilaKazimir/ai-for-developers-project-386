@@ -1,11 +1,13 @@
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.exc import InterfaceError, OperationalError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -112,5 +114,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             )
             return JSONResponse(status_code=503, content=error.model_dump(mode="json"))
         return HealthStatus(status="ok", database="ok")
+
+    dist = Path(__file__).resolve().parents[2] / "dist"
+    if (dist / "index.html").is_file():
+        app.mount("/assets", StaticFiles(directory=dist / "assets"), name="assets")
+
+        async def frontend() -> FileResponse:
+            return FileResponse(dist / "index.html")
+
+        for path in (
+            "/",
+            "/calendars/new",
+            "/organizer/event-types/new",
+            "/organizer/bookings",
+            "/event-types",
+            "/event-types/{event_type_id}",
+        ):
+            app.add_api_route(path, frontend, include_in_schema=False)
+
+        @app.get("/favicon.svg", include_in_schema=False)
+        async def favicon() -> FileResponse:
+            return FileResponse(dist / "favicon.svg")
 
     return app
