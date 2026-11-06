@@ -352,7 +352,8 @@ PostgreSQL без сброса; формат URL — `postgresql+psycopg://...`.
 
 Render: Docker Web Service, ветка `main`, регион Frankfurt, тариф Free,
 Dockerfile в корне; команду запуска переопределять не нужно.
-Публичная ссылка будет добавлена после подтверждённого успешного деплоя.
+Публичное демо: [Календарь звонков](https://call-calendar-danilakazimir.onrender.com).
+**Данные демо сбрасываются при перезапуске, деплое и пробуждении Render Free.**
 
 Безопасный шаблон MCP: `codex-mcp.example.toml`. Перенесите его секцию в
 локальную конфигурацию Codex и выполните `codex mcp login render` для OAuth.
