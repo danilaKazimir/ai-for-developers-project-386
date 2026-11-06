@@ -21,13 +21,13 @@ async def test_organizer_reads_saved_contacts_across_types_without_a_window_limi
         assert empty.status_code == 200
         assert empty.json() == {"items": []}
         assert_contract_response(empty)
-        await add_type(client, "long", 60)
-        await add_type(client, "short", 30)
+        long = await add_type(client, "long", 60)
+        short = await add_type(client, "short", 30)
         saved = []
         for start, type_id in [
-            ("2026-11-04T09:00:00Z", "short"),
-            ("2026-11-04T07:00:00Z", "long"),
-            ("2026-11-04T08:00:00Z", "short"),
+            ("2026-11-04T09:00:00Z", short),
+            ("2026-11-04T07:00:00Z", long),
+            ("2026-11-04T08:00:00Z", short),
         ]:
             payload = booking_payload(start, type_id)
             payload["guest"] = {

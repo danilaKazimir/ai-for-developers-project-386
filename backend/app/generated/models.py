@@ -50,7 +50,6 @@ class CreateEventTypeRequest(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    id: str = Field(..., max_length=64, min_length=1, pattern="^[a-z0-9]+(-[a-z0-9]+)*$")
     name: str = Field(..., pattern="^\\s*\\S(?:[\\s\\S]{0,118}\\S)?\\s*$")
     description: str = Field(..., max_length=2000)
     durationMinutes: int = Field(..., ge=1, le=540)

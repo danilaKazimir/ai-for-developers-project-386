@@ -18,8 +18,6 @@ export * from './createBooking422Code';
 export * from './createBooking500';
 export * from './createBooking500Code';
 export * from './createBookingRequest';
-export * from './createEventType409';
-export * from './createEventType409Code';
 export * from './createEventType422';
 export * from './createEventType422Code';
 export * from './createEventType500';

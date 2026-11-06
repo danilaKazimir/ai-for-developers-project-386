@@ -62,7 +62,7 @@ def time_conflict() -> HTTPException:
         409,
         detail={
             "code": "TIME_CONFLICT",
-            "message": "Это время уже заняли. Выберите другой слот",
+            "message": "Это время уже заняли. Выберите другое время",
         },
     )
 
@@ -90,7 +90,7 @@ async def create_booking(
             if record is None:
                 raise HTTPException(
                     404,
-                    detail={"code": "EVENT_TYPE_NOT_FOUND", "message": "Тип события не найден."},
+                    detail={"code": "EVENT_TYPE_NOT_FOUND", "message": "Событие не найдено."},
                 )
             start = body.startsAt.astimezone(UTC)
             selected = next(
@@ -109,7 +109,7 @@ async def create_booking(
                     422,
                     detail={
                         "code": "SLOT_NOT_BOOKABLE",
-                        "message": "Выбранное время больше недоступно. Выберите другой слот.",
+                        "message": "Выбранное время больше недоступно. Выберите другое время",
                     },
                 )
             # A separate statement sees the winner committed while this request waited.

@@ -50,7 +50,7 @@ export function SlotCalendar({ eventTypeId }: { eventTypeId: string }) {
         if (code === 'TIME_CONFLICT' || code === 'SLOT_NOT_BOOKABLE') {
           setStart(null);
           setNotice('');
-          setBookingError(code === 'TIME_CONFLICT' ? 'Это время уже заняли. Выберите другой слот' : 'Выбранное время больше недоступно. Окно записи обновлено — выберите другой слот.');
+          setBookingError(code === 'TIME_CONFLICT' ? 'Это время уже заняли. Выберите другое время' : 'Выбранное время больше недоступно. Выберите другое время');
           refreshAvailability();
           return;
         }
@@ -59,11 +59,11 @@ export function SlotCalendar({ eventTypeId }: { eventTypeId: string }) {
           return;
         }
         if (error.status === 503) {
-          setBookingError('База данных временно недоступна. Повторите попытку позже.');
+          setBookingError('Сервис временно недоступен. Повторите попытку позже');
           return;
         }
       }
-      setBookingError('Не удалось получить подтверждение записи. Встреча могла сохраниться. Обновите доступность перед повторной отправкой.');
+      setBookingError('Не удалось получить подтверждение записи. Встреча могла сохраниться. Обновите свободное время перед повторной отправкой.');
     },
   } });
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -80,7 +80,7 @@ export function SlotCalendar({ eventTypeId }: { eventTypeId: string }) {
       || (start && !data.days.some((day) => day.slots.some((slot) => slot.startsAt === start))))) {
       setDate(null);
       setStart(null);
-      setNotice('Окно записи обновилось. Выбранное время больше недоступно — выберите другое.');
+      setNotice('Доступные даты и время обновились. Выберите время заново');
     }
   }
   const timezone = data?.timezone;
@@ -114,7 +114,7 @@ export function SlotCalendar({ eventTypeId }: { eventTypeId: string }) {
     <main className="workspace container" id="main-content" tabIndex={-1}>
       {calendar.isPending && <p role="status">Загружаем календарь…</p>}
       {calendar.isError && <div role="alert">
-        <h1>{calendar.error instanceof ApiHttpError && calendar.error.status === 404 ? 'Тип события не найден' : 'Не удалось загрузить календарь'}</h1>
+        <h1>{calendar.error instanceof ApiHttpError && calendar.error.status === 404 ? 'Событие не найдено' : 'Не удалось загрузить календарь'}</h1>
         <p>Проверьте ссылку или повторите загрузку.</p>
         <button className="button" onClick={() => void refetch()}>Повторить загрузку</button>
       </div>}
@@ -153,7 +153,7 @@ export function SlotCalendar({ eventTypeId }: { eventTypeId: string }) {
           <label>Ваше имя<input required readOnly={booking.isPending} pattern="\s*\S(?:[\s\S]{0,118}\S)?\s*" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} /></label>
           <label>Email<input required readOnly={booking.isPending} type="email" maxLength={254} autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
           <label>Комментарий<textarea readOnly={booking.isPending} maxLength={2000} rows={4} value={comment} onChange={(event) => setComment(event.target.value)} /></label>
-          {bookingError && <div role="alert"><p>{bookingError}</p><button type="button" className="text-link" onClick={() => { setStart(null); refreshAvailability(); }}>Обновить доступность</button></div>}
+          {bookingError && <div role="alert"><p>{bookingError}</p><button type="button" className="text-link" onClick={() => { setStart(null); refreshAvailability(); }}>Обновить свободное время</button></div>}
           <button type="submit" className="button button-primary" disabled={!selected || booking.isPending}>{booking.isPending ? 'Подтверждаем…' : 'Подтвердить запись'}</button>
         </form>
         </>}

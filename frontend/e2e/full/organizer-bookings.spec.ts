@@ -1,18 +1,18 @@
 import { expect, test } from '@playwright/test';
-import { copyGuestLink } from './guest-links';
+import { copyGuestLink, createEvent } from './guest-links';
 
 test('полный цикл двух типов и общедоступный список с обновлением', async ({ page, request, browser }) => {
   await page.setViewportSize({ width: 320, height: 844 });
   const suffix = Date.now();
-  const types = [`list-long-${suffix}`, `list-short-${suffix}`];
+  const types: string[] = [];
   await page.goto('/organizer/event-types/new');
   const guestUrls: string[] = [];
-  for (const [index, id] of types.entries()) {
-    await page.getByLabel('Id типа события').fill(id);
+  for (const index of [0, 1]) {
     await page.getByLabel('Название', { exact: true }).fill(`Формат ${index + 1} ${suffix}`);
     await page.getByLabel('Длительность, минут').fill(index === 0 ? '60' : '30');
-    await page.getByRole('button', { name: 'Создать событие', exact: true }).click();
-    await expect(page.getByRole('status')).toContainText('Тип события создан');
+    const id = await createEvent(page);
+    types.push(id);
+    await expect(page.getByRole('status')).toContainText('Событие создано');
     guestUrls.push(await copyGuestLink(page, id));
   }
   await page.getByRole('link', { name: 'Предстоящие встречи', exact: true }).click();

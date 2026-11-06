@@ -5,11 +5,13 @@ import type { OrganizerBookings } from '../../src/api/generated/models';
 test.use({ timezoneId: 'America/Los_Angeles' });
 
 test('имя гостя из 120 символов сохраняется целиком после удаления крайних пробелов', async ({ page, request }) => {
-  const id = `padded-name-${Date.now()}`;
+  const eventName = `padded-name-${Date.now()}`;
   const name = `${'И'.repeat(119)}я`;
-  expect((await request.post('/api/organizer/event-types', {
-    data: { id, name: id, description: '', durationMinutes: 30 },
-  })).status()).toBe(201);
+  const createdType = await request.post('/api/organizer/event-types', {
+    data: { name: eventName, description: '', durationMinutes: 30 },
+  });
+  expect(createdType.status()).toBe(201);
+  const id = (await createdType.json()).id;
   const calendar = await (await request.get(`/api/event-types/${id}/slots`)).json();
   const day = calendar.days.find((entry: { slots: unknown[] }) => entry.slots.length > 0);
   await page.goto(`/event-types/${id}`);
@@ -31,16 +33,18 @@ test('имя гостя из 120 символов сохраняется цел�
 
 for (const conflict of [false, true]) {
   test(conflict ? 'занятый после выбора слот даёт конфликт и сохраняет контакты для повторной записи' : 'гость по скопированной ссылке получает подтверждение встречи', async ({ page, request }) => {
-    const id = `booking-${Date.now()}`;
-    expect((await request.post('/api/organizer/event-types', {
-      data: { id, name: `Встреча ${id}`, description: 'Обсудим проект', durationMinutes: 30 },
-    })).status()).toBe(201);
+    const eventName = `Встреча booking-${Date.now()}`;
+    const createdType = await request.post('/api/organizer/event-types', {
+      data: { name: eventName, description: 'Обсудим проект', durationMinutes: 30 },
+    });
+    expect(createdType.status()).toBe(201);
+    const id = (await createdType.json()).id;
     const calendar = await (await request.get(`/api/event-types/${id}/slots`)).json();
     const day = calendar.days.find((entry: { slots: unknown[] }) => entry.slots.length > 0);
     const selected = day.slots[0];
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/event-types');
-    const guestUrl = await copyGuestLink(page, id, page.getByRole('article').filter({ hasText: id }));
+    const guestUrl = await copyGuestLink(page, id, page.getByRole('article').filter({ hasText: eventName }));
     await page.goto(guestUrl);
     await page.getByRole('button', { name: day.date, exact: true }).click();
     await page.getByRole('group', { name: 'Свободное время' }).getByRole('button').first().click();
@@ -55,7 +59,7 @@ for (const conflict of [false, true]) {
     }
     await page.getByRole('button', { name: 'Подтвердить запись' }).click();
     if (conflict) {
-      await expect(page.getByRole('alert')).toContainText('Это время уже заняли. Выберите другой слот');
+      await expect(page.getByRole('alert')).toContainText('Это время уже заняли. Выберите другое время');
       await expect(page.getByRole('heading', { name: 'Выбрано время' })).toHaveCount(0);
       await expect(page.getByLabel('Ваше имя')).toHaveValue('Анна');
       await expect(page.getByLabel('Email')).toHaveValue('anna@example.com');
@@ -68,7 +72,7 @@ for (const conflict of [false, true]) {
     }
     await expect(page.getByRole('heading', { name: 'Встреча подтверждена' })).toBeVisible();
     await expect(page.locator('a[href]:not([href="#main-content"])')).toHaveCount(0);
-    await expect(page.getByRole('status')).toContainText(`Встреча ${id}`);
+    await expect(page.getByRole('status')).toContainText(eventName);
     await expect(page.getByRole('status')).toContainText('Europe/Moscow');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });

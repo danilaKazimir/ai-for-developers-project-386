@@ -27,10 +27,10 @@ test('организатор может пройти основной сцена
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL('/calendars/new');
 
-  await page.getByLabel('Id типа события').focus();
-  await expect(page.getByLabel('Id типа события')).toBeFocused();
-  await page.keyboard.press('Tab');
+  await page.getByLabel('Название', { exact: true }).focus();
   await expect(page.getByLabel('Название', { exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByLabel('Описание', { exact: true })).toBeFocused();
 });
 
 test('страницу создания типа можно открыть напрямую и обновить', async ({ page }) => {
@@ -122,10 +122,10 @@ test('каталог показывает загрузку, ошибку с по
     await route.fulfill({ status: 503, json: { code: 'DATABASE_UNAVAILABLE', message: 'Unavailable' } });
   });
   await page.goto('/event-types');
-  await expect(page.getByRole('status')).toHaveText('Загружаем типы событий…');
+  await expect(page.getByRole('status')).toHaveText('Загружаем события…');
   release();
-  await expect(page.getByRole('alert')).toContainText('Не удалось загрузить каталог');
+  await expect(page.getByRole('alert')).toContainText('Не удалось загрузить события');
   await page.route('**/api/event-types', (route) => route.fulfill({ json: { items: [] } }));
   await page.getByRole('button', { name: 'Повторить загрузку' }).click();
-  await expect(page.getByText('Типов событий пока нет. Организатор ещё не добавил встречи.')).toBeVisible();
+  await expect(page.getByText('Событий пока нет. Создайте первое событие и отправьте ссылку гостю.')).toBeVisible();
 });

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Annotated, Any
+from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, Path
@@ -49,32 +50,29 @@ async def create_event_type(
     body: EventTypeInput,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> EventType:
-    record = EventTypeRecord(
-        id=body.id,
-        name=body.name,
-        description=body.description,
-        duration_minutes=body.durationMinutes,
-    )
-    session.add(record)
-    try:
-        await session.commit()
-    except IntegrityError as error:
-        await session.rollback()
-        original = error.orig
-        if (
-            getattr(original, "sqlstate", None) == "23505"
-            and getattr(getattr(original, "diag", None), "constraint_name", None)
-            == "event_types_pkey"
-        ):
-            raise HTTPException(
-                status_code=409,
-                detail={
-                    "code": "EVENT_TYPE_ID_TAKEN",
-                    "message": "Этот id уже занят. Выберите другой.",
-                },
-            ) from error
-        raise
-    return event_type_response(record)
+    for attempt in range(3):
+        record = EventTypeRecord(
+            id=uuid4().hex,
+            name=body.name,
+            description=body.description,
+            duration_minutes=body.durationMinutes,
+        )
+        session.add(record)
+        try:
+            await session.commit()
+        except IntegrityError as error:
+            await session.rollback()
+            original = error.orig
+            collision = (
+                getattr(original, "sqlstate", None) == "23505"
+                and getattr(getattr(original, "diag", None), "constraint_name", None)
+                == "event_types_pkey"
+            )
+            if not collision or attempt == 2:
+                raise
+        else:
+            return event_type_response(record)
+    raise RuntimeError("Event type creation exhausted")
 
 
 @router.get("/api/event-types", response_model=EventTypeCatalog, operation_id="listEventTypes")
@@ -101,7 +99,7 @@ async def get_event_type_slots(
     if record is None:
         raise HTTPException(
             status_code=404,
-            detail={"code": "EVENT_TYPE_NOT_FOUND", "message": "Тип события не найден."},
+            detail={"code": "EVENT_TYPE_NOT_FOUND", "message": "Событие не найдено."},
         )
     calendar = await session.get(Calendar, 1)
     if calendar is None:

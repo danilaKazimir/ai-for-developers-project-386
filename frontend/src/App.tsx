@@ -101,9 +101,9 @@ function CalendarPreview() {
 }
 
 const steps = [
-  { icon: 'calendar', title: 'Создайте тип события', description: 'Задайте название, описание и длительность. Все типы используют один общий календарь организатора.' },
-  { icon: 'link', title: 'Поделитесь ссылкой', description: 'Отправьте гостям одну ссылку в мессенджере или любым другим удобным способом.' },
-  { icon: 'check', title: 'Гость выбирает время', description: 'Гость записывается на свободный слот. После подтверждения это время становится недоступно другим.' },
+  { icon: 'calendar', title: 'Создайте событие', description: 'Укажите название, описание и длительность встречи.' },
+  { icon: 'link', title: 'Отправьте ссылку гостю', description: 'Отправьте гостям одну ссылку в мессенджере или любым другим удобным способом.' },
+  { icon: 'check', title: 'Гость выбирает время', description: 'Гость выбирает свободное время и подтверждает запись. После подтверждения это время становится недоступно другим.' },
 ] as const;
 
 function LandingPage() {
@@ -113,7 +113,7 @@ function LandingPage() {
         <div className="hero-copy">
           <p className="eyebrow"><span className="small-line" /> Меньше сообщений. Больше встреч.</p>
           <h1 id="hero-title">Договоритесь о звонке <span>без лишней переписки</span></h1>
-          <p className="hero-description">Вы создаёте типы событий разной длительности и отправляете ссылку на каталог. Гости выбирают подходящий формат встречи.</p>
+          <p className="hero-description">Создайте событие и отправьте ссылку гостю. Он сам выберет удобное время для встречи</p>
           <CreateCalendarLink />
           <p className="registration-note"><Icon name="check" /> Без регистрации для вас и ваших гостей</p>
         </div>
@@ -144,7 +144,7 @@ function LandingPage() {
           <div>
             <p className="eyebrow">Время для самого важного</p>
             <h2 id="closing-title">Встречи начинаются<br />с удобного времени</h2>
-            <p>Предлагайте разные встречи в одном общем календаре. Поделитесь каталогом или ссылкой на тип.</p>
+            <p>Создавайте события и отправляйте гостям ссылки на них.</p>
           </div>
           <CreateCalendarLink />
         </div>
@@ -203,7 +203,7 @@ export function App() {
   const isCatalogPage = pathname === '/event-types';
   const eventTypeId = /^\/event-types\/([^/]+)$/.exec(pathname)?.[1];
   const messagePage = messagePages.notFound;
-  const title = isHomePage ? 'Календарь звонков — встречи без лишней переписки' : isCreatePage ? 'Создать событие — Календарь звонков' : isBookingsPage ? 'Предстоящие встречи — Календарь звонков' : isCatalogPage ? 'Типы событий — Календарь звонков' : eventTypeId ? 'Выбрать время — Календарь звонков' : messagePage.title;
+  const title = isHomePage ? 'Календарь звонков — встречи без лишней переписки' : isCreatePage ? 'Создать событие — Календарь звонков' : isBookingsPage ? 'Предстоящие встречи — Календарь звонков' : isCatalogPage ? 'События — Календарь звонков' : eventTypeId ? 'Выбрать время — Календарь звонков' : messagePage.title;
 
   return (
     <div className="app" onClick={navigate}>
@@ -211,7 +211,7 @@ export function App() {
       <a className="skip-link" href="#main-content">Перейти к содержимому</a>
       <header className="site-header container">
         {eventTypeId ? <span className="brand"><span className="brand-mark"><Icon name="calendar" /></span><span>Календарь звонков</span></span> : <Brand />}
-        {!eventTypeId && <nav aria-label="Основная навигация"><a className="catalog-link" href="/organizer/bookings">Предстоящие встречи</a><a className="catalog-link" href="/event-types">Каталог</a>{isHomePage && <a className="how-link" href="#how-it-works">Как это работает</a>}{!isCreatePage && <CreateCalendarLink className="header-button" />}</nav>}
+        {!eventTypeId && <nav aria-label="Основная навигация"><a className="catalog-link" href="/organizer/bookings">Предстоящие встречи</a><a className="catalog-link" href="/event-types">События</a>{isHomePage && <a className="how-link" href="#how-it-works">Как это работает</a>}{!isCreatePage && <CreateCalendarLink className="header-button" />}</nav>}
       </header>
       {isHomePage ? <LandingPage /> : isCreatePage ? <CreateEventType /> : isBookingsPage ? <OrganizerBookings /> : isCatalogPage ? <EventTypeCatalog /> : eventTypeId ? <SlotCalendar key={eventTypeId} eventTypeId={eventTypeId} /> : <MessagePage content={messagePage} />}
       <footer className="site-footer container"><span>Календарь звонков</span><p>Больше времени на разговор.</p></footer>

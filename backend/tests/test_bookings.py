@@ -19,11 +19,11 @@ async def test_guest_books_and_occupancy_is_shared_without_exposing_contacts(
     async with AsyncClient(
         transport=ASGITransport(app=postgres_app), base_url="http://test"
     ) as client:
-        await create_type(client, 60)
+        intro = await create_type(client, 60)
         response = await client.post(
             "/api/bookings",
             json={
-                "eventTypeId": "intro",
+                "eventTypeId": intro,
                 "startsAt": "2026-11-04T10:00:00+03:00",
                 "guest": {"name": "  Гость  ", "email": "guest@example.com", "comment": "Секрет"},
             },
@@ -34,8 +34,8 @@ async def test_guest_books_and_occupancy_is_shared_without_exposing_contacts(
         assert result["startsAt"] == "2026-11-04T07:00:00Z"
         assert result["endsAt"] == "2026-11-04T08:00:00Z"
         assert result["timezone"] == "Europe/Moscow"
-        assert result["eventType"]["id"] == "intro"
-        for path in ("/api/event-types", "/api/event-types/intro/slots"):
+        assert result["eventType"]["id"] == intro
+        for path in ("/api/event-types", f"/api/event-types/{intro}/slots"):
             public = await client.get(path)
             assert_contract_response(public)
             assert all(
@@ -48,17 +48,17 @@ async def test_guest_books_and_occupancy_is_shared_without_exposing_contacts(
         assert "2026-11-04T08:00:00Z" in starts
 
 
-async def add_type(client: AsyncClient, id: str, duration: int) -> None:
+async def add_type(client: AsyncClient, name: str, duration: int) -> str:
     response = await client.post(
         "/api/organizer/event-types",
         json={
-            "id": id,
-            "name": id,
+            "name": name,
             "description": "",
             "durationMinutes": duration,
         },
     )
     assert response.status_code == 201
+    return str(response.json()["id"])
 
 
 def booking_payload(
@@ -90,17 +90,19 @@ async def test_overlap_and_adjacency_across_types(
     async with AsyncClient(
         transport=ASGITransport(app=postgres_app), base_url="http://test"
     ) as client:
-        await create_type(client, 60)
-        await add_type(client, "other", duration)
-        assert (await client.post("/api/bookings", json=booking_payload())).status_code == 201
+        intro = await create_type(client, 60)
+        other = await add_type(client, "other", duration)
+        assert (
+            await client.post("/api/bookings", json=booking_payload(event_type=intro))
+        ).status_code == 201
         response = await client.post(
-            "/api/bookings", json=booking_payload(f"2026-11-04T{start}:00Z", "other")
+            "/api/bookings", json=booking_payload(f"2026-11-04T{start}:00Z", other)
         )
         assert response.status_code == status
         assert_contract_response(response)
         if status == 409:
             assert response.json()["code"] == "TIME_CONFLICT"
-        public = await client.get("/api/event-types/other/slots")
+        public = await client.get(f"/api/event-types/{other}/slots")
         assert_contract_response(public)
         assert all(
             slot["startsAt"] != "2026-11-04T07:00:00Z" for slot in public.json()["days"][0]["slots"]
@@ -152,12 +154,16 @@ async def test_invalid_booking_never_creates_a_meeting(
     async with AsyncClient(
         transport=ASGITransport(app=postgres_app), base_url="http://test"
     ) as client:
-        await create_type(client, 60)
-        response = await client.post("/api/bookings", json={**booking_payload(), **change})
+        intro = await create_type(client, 60)
+        response = await client.post(
+            "/api/bookings", json={**booking_payload(event_type=intro), **change}
+        )
         assert response.status_code == status
         assert response.json()["code"] == code
         assert_contract_response(response)
-        assert (await client.post("/api/bookings", json=booking_payload())).status_code == 201
+        assert (
+            await client.post("/api/bookings", json=booking_payload(event_type=intro))
+        ).status_code == 201
 
 
 async def test_same_type_repeat_conflicts_and_no_public_booking_lookup(
@@ -167,9 +173,9 @@ async def test_same_type_repeat_conflicts_and_no_public_booking_lookup(
     async with AsyncClient(
         transport=ASGITransport(app=postgres_app), base_url="http://test"
     ) as client:
-        await create_type(client)
-        saved = await client.post("/api/bookings", json=booking_payload())
-        again = await client.post("/api/bookings", json=booking_payload())
+        intro = await create_type(client)
+        saved = await client.post("/api/bookings", json=booking_payload(event_type=intro))
+        again = await client.post("/api/bookings", json=booking_payload(event_type=intro))
         assert again.status_code == 409
         assert_contract_response(again)
         assert (await client.get("/api/bookings/" + saved.json()["id"])).status_code == 404
@@ -284,17 +290,19 @@ async def test_concurrent_bookings_use_independent_waiting_connections(
     async with AsyncClient(
         transport=ASGITransport(app=postgres_app), base_url="http://test"
     ) as client:
-        await create_type(client, 60)
-        await add_type(client, "other", 30)
-        for id in ("intro", "other"):
+        intro = await create_type(client, 60)
+        other = await add_type(client, "other", 30)
+        for id in (intro, other):
             available = await client.get(f"/api/event-types/{id}/slots")
             assert "2026-11-04T07:00:00Z" in available.text
     responses = await competing_requests(
         postgres_app,
         test_database_url,
         [
-            booking_payload(),
-            booking_payload(f"2026-11-04T{other_start}:00Z", other_type),
+            booking_payload(event_type=intro),
+            booking_payload(
+                f"2026-11-04T{other_start}:00Z", intro if other_type == "intro" else other
+            ),
         ],
     )
     assert sorted(response.status_code for response in responses) == expected
@@ -331,9 +339,9 @@ async def test_clock_is_rechecked_after_waiting_for_the_calendar(
     async with AsyncClient(
         transport=ASGITransport(app=postgres_app), base_url="http://test"
     ) as client:
-        await create_type(client)
+        intro = await create_type(client)
     responses = await competing_requests(
-        postgres_app, test_database_url, [booking_payload()], advance_clock=True
+        postgres_app, test_database_url, [booking_payload(event_type=intro)], advance_clock=True
     )
     assert responses[0].status_code == 422
     assert responses[0].json()["code"] == "SLOT_NOT_BOOKABLE"
@@ -352,8 +360,8 @@ async def test_storage_constraint_rejects_bypass_overlap_but_allows_adjacency(
     async with AsyncClient(
         transport=ASGITransport(app=postgres_app), base_url="http://test"
     ) as client:
-        await create_type(client, 60)
-        await add_type(client, "other", 30)
+        intro = await create_type(client, 60)
+        other = await add_type(client, "other", 30)
     engine = create_async_engine(test_database_url)
     statement = text(
         "INSERT INTO bookings (id,event_type_id,starts_at,ends_at,"
@@ -362,14 +370,14 @@ async def test_storage_constraint_rejects_bypass_overlap_but_allows_adjacency(
         "'Guest','a@example.com','')"
     )
 
-    async def insert(start: str | None, end: str, type: str = "other") -> None:
+    async def insert(start: str | None, end: str, type: str = other) -> None:
         async with engine.begin() as connection:
             await connection.execute(
                 statement, {"id": uuid4(), "type": type, "start": start, "end": end}
             )
 
     try:
-        await insert("2026-11-04T07:00:00Z", "2026-11-04T08:00:00Z", "intro")
+        await insert("2026-11-04T07:00:00Z", "2026-11-04T08:00:00Z", intro)
         with pytest.raises(IntegrityError) as caught:
             await insert("2026-11-04T07:30:00Z", "2026-11-04T08:00:00Z")
         assert isinstance(caught.value.orig, Error)
@@ -430,9 +438,9 @@ async def test_local_window_and_repeated_instants_are_bookable(postgres_app: Fas
     async with AsyncClient(
         transport=ASGITransport(app=postgres_app), base_url="http://test"
     ) as client:
-        await create_type(client)
+        intro = await create_type(client)
         for start in ["1969-09-29T22:00:00Z", "1969-09-30T21:00:00Z"]:
-            response = await client.post("/api/bookings", json=booking_payload(start))
+            response = await client.post("/api/bookings", json=booking_payload(start, intro))
             assert response.status_code == 201
             assert response.json()["startsAt"] == start
             assert_contract_response(response)
@@ -445,10 +453,10 @@ async def test_expired_window_is_rejected_even_if_previously_advertised(
     async with AsyncClient(
         transport=ASGITransport(app=postgres_app), base_url="http://test"
     ) as client:
-        await create_type(client)
-        assert "2026-11-04T07:00:00Z" in (await client.get("/api/event-types/intro/slots")).text
+        intro = await create_type(client)
+        assert "2026-11-04T07:00:00Z" in (await client.get(f"/api/event-types/{intro}/slots")).text
         postgres_app.state.clock = lambda: datetime.fromisoformat("2026-11-04T21:00:00+00:00")
-        response = await client.post("/api/bookings", json=booking_payload())
+        response = await client.post("/api/bookings", json=booking_payload(event_type=intro))
         assert response.status_code == 422
         assert response.json()["code"] == "SLOT_NOT_BOOKABLE"
         assert_contract_response(response)

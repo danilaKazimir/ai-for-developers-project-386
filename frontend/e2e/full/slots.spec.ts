@@ -4,16 +4,16 @@ import { copyGuestLink } from './guest-links';
 test.use({ timezoneId: 'America/Los_Angeles' });
 
 test('гость по скопированной ссылке выбирает дату и время с клавиатуры', async ({ page, request }) => {
-  const id = `slots-${Date.now()}`;
   const created = await request.post('/api/organizer/event-types', {
-    data: { id, name: 'Обсуждение проекта', description: 'Встреча для знакомства', durationMinutes: 45 },
+    data: { name: 'Обсуждение проекта', description: 'Встреча для знакомства', durationMinutes: 45 },
   });
   expect(created.status()).toBe(201);
+  const id = (await created.json()).id;
   const response = await request.get(`/api/event-types/${id}/slots`);
   const calendar = await response.json();
   const available = calendar.days.find((day: { slots: unknown[] }) => day.slots.length > 0);
   await page.goto('/event-types');
-  const guestUrl = await copyGuestLink(page, id, page.getByRole('article').filter({ hasText: id }));
+  const guestUrl = await copyGuestLink(page, id, page.getByRole('article').filter({ hasText: 'Обсуждение проекта' }));
   await page.goto(guestUrl);
   await expect(page.getByRole('heading', { name: 'Обсуждение проекта' })).toBeVisible();
   await expect(page.getByText('Europe/Moscow', { exact: true })).toBeVisible();
@@ -52,7 +52,7 @@ test('пустая дата, возврат на страницу и пусто�
   await expect(page.getByRole('status')).toContainText('Выбрано время');
   empty = true;
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
-  await expect(page.getByRole('status')).toContainText('Выбранное время больше недоступно');
+  await expect(page.getByRole('status')).toContainText('Доступные даты и время обновились. Выберите время заново');
   await expect(page.getByText('В ближайшие 14 дней свободного времени нет. Вернитесь позднее.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Выбрано время' })).toHaveCount(0);
 });
@@ -73,7 +73,7 @@ test('окно перечитывается в московскую полноч
 
 test('неизвестная прямая ссылка показывает понятную ошибку', async ({ page }) => {
   await page.goto('/event-types/no-such-type');
-  await expect(page.getByRole('heading', { name: 'Тип события не найден' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Событие не найдено' })).toBeVisible();
   await expect(page.locator('a[href]:not([href="#main-content"])')).toHaveCount(0);
 });
 

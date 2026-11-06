@@ -9,12 +9,6 @@
  * Input name must have 1–120 characters after trimming surrounding whitespace.
  */
 export interface CreateEventTypeRequest {
-  /**
-     * @minLength 1
-     * @maxLength 64
-     * @pattern ^[a-z0-9]+(-[a-z0-9]+)*$
-     */
-  id: string;
   /** @pattern ^\s*\S(?:[\s\S]{0,118}\S)?\s*$ */
   name: string;
   /** @maxLength 2000 */

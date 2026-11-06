@@ -47,7 +47,6 @@ model EventType {
 
 /** Input name must have 1–120 characters after trimming surrounding whitespace. */
 model CreateEventTypeRequest {
-  id: EventType.id;
   @pattern("^\\s*\\S(?:[\\s\\S]{0,118}\\S)?\\s*$")
   name: string;
   description: EventType.description;
@@ -58,10 +57,6 @@ model EventTypeCatalog {
   items: EventType[];
 }
 
-@error model EventTypeConflictError {
-  @statusCode statusCode: 409;
-  @body body: { code: "EVENT_TYPE_ID_TAKEN"; message: string; };
-}
 @error model ValidationError {
   @statusCode statusCode: 422;
   @body body: { code: "VALIDATION_ERROR"; message: string; };
@@ -77,7 +72,7 @@ model EventTypeCatalog {
 op createEventType(@body eventType: CreateEventTypeRequest): {
   @statusCode statusCode: 201;
   @body body: EventType;
-} | EventTypeConflictError | ValidationError | ServiceUnavailableError | InternalError;
+} | ValidationError | ServiceUnavailableError | InternalError;
 
 @route("/api/event-types")
 @get

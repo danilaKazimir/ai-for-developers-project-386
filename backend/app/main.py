@@ -62,7 +62,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             content={
                 "code": "VALIDATION_ERROR",
                 "message": (
-                    "Проверьте поля формы: id, время с часовым поясом, имя (1–120 символов), "
+                    "Проверьте поля формы: время с часовым поясом, имя (1–120 символов), "
                     "email (до 254), комментарий или описание (до 2000) и длительность (1–540)."
                 ),
             },
@@ -75,7 +75,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             status_code=503 if unavailable else 500,
             content={
                 "code": "DATABASE_UNAVAILABLE" if unavailable else "INTERNAL_ERROR",
-                "message": "База данных временно недоступна."
+                "message": "Сервис временно недоступен. Повторите попытку позже"
                 if unavailable
                 else "Не удалось выполнить запрос.",
             },
@@ -107,7 +107,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await session.execute(text("SELECT 1"))
         except SQLAlchemyError:
             error = ApiError(
-                code="DATABASE_UNAVAILABLE", message="Database is temporarily unavailable."
+                code="DATABASE_UNAVAILABLE",
+                message="Сервис временно недоступен. Повторите попытку позже",
             )
             return JSONResponse(status_code=503, content=error.model_dump(mode="json"))
         return HealthStatus(status="ok", database="ok")

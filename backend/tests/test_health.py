@@ -55,7 +55,7 @@ async def test_database_failure_matches_contract_without_leaking_details(
     assert response.status_code == 503
     assert response.json() == {
         "code": "DATABASE_UNAVAILABLE",
-        "message": "Database is temporarily unavailable.",
+        "message": "Сервис временно недоступен. Повторите попытку позже",
     }
     assert "secret-password" not in response.text
     assert "private-host" not in response.text

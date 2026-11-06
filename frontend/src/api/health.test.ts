@@ -14,7 +14,7 @@ describe('generated Fetch and Query client', () => {
   });
 
   it('exposes the HTTP status and body through the Query error state', async () => {
-    const body = { code: 'DATABASE_UNAVAILABLE', message: 'Database is temporarily unavailable.' };
+    const body = { code: 'DATABASE_UNAVAILABLE', message: 'Сервис временно недоступен. Повторите попытку позже' };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(body, { status: 503 })));
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const options = getGetHealthQueryOptions();

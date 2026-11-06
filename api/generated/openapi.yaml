@@ -286,24 +286,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EventType'
-        '409':
-          description: The request conflicts with the current state of the server.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code:
-                    type: string
-                    enum:
-                      - EVENT_TYPE_ID_TAKEN
-                  message:
-                    type: string
-                required:
-                  - code
-                  - message
-                unevaluatedProperties:
-                  not: {}
         '422':
           description: Client error
           content:
@@ -432,16 +414,10 @@ components:
     CreateEventTypeRequest:
       type: object
       required:
-        - id
         - name
         - description
         - durationMinutes
       properties:
-        id:
-          type: string
-          minLength: 1
-          maxLength: 64
-          pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
         name:
           type: string
           pattern: ^\s*\S(?:[\s\S]{0,118}\S)?\s*$

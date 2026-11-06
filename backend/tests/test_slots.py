@@ -9,17 +9,17 @@ from backend.tests.contract import assert_contract_response
 pytestmark = pytest.mark.integration
 
 
-async def create_type(client: AsyncClient, duration: int = 30) -> None:
+async def create_type(client: AsyncClient, duration: int = 30) -> str:
     response = await client.post(
         "/api/organizer/event-types",
         json={
-            "id": "intro",
             "name": "Знакомство",
             "description": "Обсудим задачу",
             "durationMinutes": duration,
         },
     )
     assert response.status_code == 201
+    return str(response.json()["id"])
 
 
 @pytest.mark.parametrize("now", ["2026-11-04T06:30:00+00:00", "2026-11-04T09:30:00+03:00"])
@@ -31,13 +31,13 @@ async def test_calendar_returns_fourteen_local_dates_and_future_weekday_starts(
     async with AsyncClient(
         transport=ASGITransport(app=postgres_app), base_url="http://test"
     ) as client:
-        await create_type(client)
-        response = await client.get("/api/event-types/intro/slots")
+        intro = await create_type(client)
+        response = await client.get(f"/api/event-types/{intro}/slots")
     assert response.status_code == 200
     assert_contract_response(response)
     calendar = response.json()
     assert calendar["eventType"] == {
-        "id": "intro",
+        "id": intro,
         "name": "Знакомство",
         "description": "Обсудим задачу",
         "durationMinutes": 30,
@@ -87,8 +87,8 @@ async def test_entire_meeting_fits_workday(
     async with AsyncClient(
         transport=ASGITransport(app=postgres_app), base_url="http://test"
     ) as client:
-        await create_type(client, duration)
-        response = await client.get("/api/event-types/intro/slots")
+        intro = await create_type(client, duration)
+        response = await client.get(f"/api/event-types/{intro}/slots")
     assert_contract_response(response)
     slots = response.json()["days"][0]["slots"]
     assert len(slots) == count
@@ -103,11 +103,11 @@ async def test_window_rolls_at_calendar_midnight_not_utc(postgres_app: FastAPI) 
     async with AsyncClient(
         transport=ASGITransport(app=postgres_app), base_url="http://test"
     ) as client:
-        await create_type(client)
+        intro = await create_type(client)
         postgres_app.state.clock = lambda: datetime.fromisoformat("2026-11-03T20:59:59+00:00")
-        before = await client.get("/api/event-types/intro/slots")
+        before = await client.get(f"/api/event-types/{intro}/slots")
         postgres_app.state.clock = lambda: datetime.fromisoformat("2026-11-03T21:00:00+00:00")
-        after = await client.get("/api/event-types/intro/slots")
+        after = await client.get(f"/api/event-types/{intro}/slots")
     assert before.json()["windowStartDate"] == "2026-11-03"
     assert before.json()["days"][0]["slots"] == []
     assert before.json()["days"][-1]["date"] == "2026-11-16"
@@ -170,8 +170,8 @@ async def test_dst_window_uses_local_dates_and_current_offset(
     async with AsyncClient(
         transport=ASGITransport(app=postgres_app), base_url="http://test"
     ) as client:
-        await create_type(client)
-        response = await client.get("/api/event-types/intro/slots")
+        intro = await create_type(client)
+        response = await client.get(f"/api/event-types/{intro}/slots")
     assert_contract_response(response)
     calendar = response.json()
     assert calendar["windowStartDate"] == start
@@ -189,8 +189,8 @@ async def test_nonexistent_weekday_is_returned_without_normalized_slots(
     async with AsyncClient(
         transport=ASGITransport(app=postgres_app), base_url="http://test"
     ) as client:
-        await create_type(client)
-        response = await client.get("/api/event-types/intro/slots")
+        intro = await create_type(client)
+        response = await client.get(f"/api/event-types/{intro}/slots")
     assert_contract_response(response)
     calendar = response.json()
     assert calendar["days"][1] == {"date": "2011-12-30", "slots": []}
@@ -204,8 +204,8 @@ async def test_repeated_weekday_keeps_both_instants_in_real_order(postgres_app: 
     async with AsyncClient(
         transport=ASGITransport(app=postgres_app), base_url="http://test"
     ) as client:
-        await create_type(client)
-        response = await client.get("/api/event-types/intro/slots")
+        intro = await create_type(client)
+        response = await client.get(f"/api/event-types/{intro}/slots")
     assert_contract_response(response)
     slots = response.json()["days"][0]["slots"]
     assert len(slots) == 36

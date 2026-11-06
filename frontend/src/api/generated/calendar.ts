@@ -31,7 +31,6 @@ import type {
   CreateBooking422,
   CreateBooking500,
   CreateBookingRequest,
-  CreateEventType409,
   CreateEventType422,
   CreateEventType500,
   CreateEventTypeRequest,
@@ -577,7 +576,7 @@ return apiFetch<EventType>(getCreateEventTypeUrl(),
 
 export const getCreateEventTypeMutationKey = () => ['createEventType'] as const;
 
-export const getCreateEventTypeMutationOptions = <TError = ErrorType<CreateEventType409 | CreateEventType422 | CreateEventType500 | ApiError>,
+export const getCreateEventTypeMutationOptions = <TError = ErrorType<CreateEventType422 | CreateEventType500 | ApiError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEventType>>, TError,CreateEventTypeMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createEventType>>, TError,CreateEventTypeMutationVariables, TContext> => {
 
@@ -606,10 +605,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateEventTypeMutationResult = NonNullable<Awaited<ReturnType<typeof createEventType>>>
     export type CreateEventTypeMutationBody = CreateEventTypeRequest
-    export type CreateEventTypeMutationError = ErrorType<CreateEventType409 | CreateEventType422 | CreateEventType500 | ApiError>
+    export type CreateEventTypeMutationError = ErrorType<CreateEventType422 | CreateEventType500 | ApiError>
     export type CreateEventTypeMutationVariables = {data: CreateEventTypeRequest}
 
-    export const useCreateEventType = <TError = ErrorType<CreateEventType409 | CreateEventType422 | CreateEventType500 | ApiError>,
+    export const useCreateEventType = <TError = ErrorType<CreateEventType422 | CreateEventType500 | ApiError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEventType>>, TError,CreateEventTypeMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createEventType>>,
