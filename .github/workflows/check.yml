@@ -37,6 +37,15 @@ jobs:
           done
           docker logs calendar-acceptance
           exit 1
+      - name: Check the fresh Docker catalog and free times
+        run: |
+          event_id=d0c5f4b98ee747c8b777a63314ef0475
+          curl -fsS http://localhost:18080/api/event-types | jq -e --arg id "$event_id" '
+            .items | select(length == 1) | .[0]
+            | .id == $id and .name == "Знакомство" and .durationMinutes == 30
+          '
+          curl -fsS "http://localhost:18080/api/event-types/$event_id/slots" \
+            | jq -e 'any(.days[]; .slots | length > 0)'
       - name: Test Docker booking scenarios
         run: DEPLOYMENT_URL=http://localhost:18080 mise exec -- npm exec -- playwright test --config playwright.deployment.config.ts
       - name: PostgreSQL logs

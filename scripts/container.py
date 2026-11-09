@@ -85,6 +85,30 @@ def main() -> int:
                     f"postgresql+psycopg://postgres@/calendar?host={directory}"
                 )
             run(["alembic", "upgrade", "head"])
+            if database is not None:
+                run(
+                    [
+                        "psql",
+                        "-X",
+                        "-h",
+                        directory,
+                        "-d",
+                        "calendar",
+                        "-v",
+                        "ON_ERROR_STOP=1",
+                        "-c",
+                        """
+                        INSERT INTO event_types (id, name, description, duration_minutes)
+                        VALUES (
+                            'd0c5f4b98ee747c8b777a63314ef0475',
+                            'Знакомство',
+                            'Короткая демонстрационная встреча.',
+                            30
+                        )
+                        ON CONFLICT (id) DO NOTHING
+                        """,
+                    ]
+                )
             api = start(
                 [
                     sys.executable,
