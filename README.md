@@ -343,16 +343,19 @@ docker build --platform linux/amd64 -t call-calendar .
 docker run --rm --memory=512m -e PORT=10000 -p 10000:10000 call-calendar
 ```
 
-Контейнер автоматически создаёт PostgreSQL, применяет миграции и запускает
-приложение на `0.0.0.0:$PORT` (по умолчанию 10000).
+Контейнер автоматически создаёт PostgreSQL, применяет миграции, добавляет
+событие «Знакомство» на 30 минут и запускает приложение на `0.0.0.0:$PORT`
+(по умолчанию 10000). Событие сразу доступно в каталоге и сохраняет адрес
+`/event-types/d0c5f4b98ee747c8b777a63314ef0475` при каждом запуске.
 **Данные встроенной БД сбрасываются при каждом запуске контейнера**, включая
 перезапуск, деплой и пробуждение Render Free после засыпания. Локальная БД
 Compose не затрагивается. При переданном `DATABASE_URL` используется внешняя
-PostgreSQL без сброса; формат URL — `postgresql+psycopg://...`.
+PostgreSQL с её собственным каталогом; формат URL — `postgresql+psycopg://...`.
 
 Render: Docker Web Service, ветка `main`, регион Frankfurt, тариф Free,
 Dockerfile в корне; команду запуска переопределять не нужно.
-Публичное демо: [Календарь звонков](https://call-calendar-danilakazimir.onrender.com).
+Публичное демо — [Календарь звонков](https://call-calendar-danilakazimir.onrender.com).
+Попробуйте [записаться на «Знакомство»](https://call-calendar-danilakazimir.onrender.com/event-types/d0c5f4b98ee747c8b777a63314ef0475) с вымышленными контактами.
 **Данные демо сбрасываются при перезапуске, деплое и пробуждении Render Free.**
 
 Безопасный шаблон MCP: `codex-mcp.example.toml`. Перенесите его секцию в
